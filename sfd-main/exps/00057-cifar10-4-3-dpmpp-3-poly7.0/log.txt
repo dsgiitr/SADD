@@ -1,0 +1,45 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+cherish
+4
+torch.Size([12])
+teacher now
+torch.Size([3])
+/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Total parameters in U-Net:      60417164
+Setting up optimizer...
+Training for 200 kimg...
+
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Step: 0 | Loss-mean: 1133.72119141 | loss-std:  14.38260078
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Step: 1 | Loss-mean: 113.14307404 | loss-std:   1.56940401
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Step: 2 | Loss-mean:  26.51963043 | loss-std:   6.86450291
+tick 0     kimg 0.3       time 36s          sec/tick 32.7    sec/kimg 127.93  maintenance 3.2    gpumem 20.11  reserved 20.26 
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Step: 0 | Loss-mean: 1131.50378418 | loss-std:  15.06936264
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+
+Aborted!

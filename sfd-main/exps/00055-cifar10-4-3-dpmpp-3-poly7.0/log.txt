@@ -1,0 +1,15 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+cherish
+4
+torch.Size([12])
+teacher now
+torch.Size([3])
+/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Total parameters in U-Net:      60417164
+Setting up optimizer...
+Training for 200 kimg...
+
+
+Aborted!

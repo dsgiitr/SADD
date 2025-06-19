@@ -1,0 +1,57 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Total parameters in U-Net:      60396419
+Setting up optimizer...
+Training for 50 kimg...
+
+Step: 0 | Loss-mean:   8.76068211 | loss-std:   5.03089380
+Step: 1 | Loss-mean:  14.78749657 | loss-std:   5.28503752
+Step: 2 | Loss-mean:  16.65814590 | loss-std:   4.22001934
+tick 0     kimg 0.0       time 7s           sec/tick 3.7     sec/kimg 230.48  maintenance 2.9    gpumem 2.33   reserved 2.39  
+Step: 0 | Loss-mean:   9.94699860 | loss-std:   3.29434824
+Step: 1 | Loss-mean:  16.95680428 | loss-std:   3.94901109
+Step: 2 | Loss-mean:  18.47623444 | loss-std:   3.29794097
+Step: 0 | Loss-mean:  10.47141266 | loss-std:   2.83971119
+Step: 1 | Loss-mean:  15.67900848 | loss-std:   3.20440388
+Step: 2 | Loss-mean:  17.42821121 | loss-std:   2.44601941
+Step: 0 | Loss-mean:   9.83020210 | loss-std:   4.60355473
+Step: 1 | Loss-mean:  13.78763390 | loss-std:   4.81272316
+Step: 2 | Loss-mean:  15.13857841 | loss-std:   4.33304024
+Step: 0 | Loss-mean:   9.08922005 | loss-std:   3.18400002
+Step: 1 | Loss-mean:  14.05254555 | loss-std:   3.67191815
+Step: 2 | Loss-mean:  15.94736290 | loss-std:   2.76917505
+Step: 0 | Loss-mean:   9.59473419 | loss-std:   2.53573036
+Step: 1 | Loss-mean:  13.35631180 | loss-std:   4.87766171
+Step: 2 | Loss-mean:  14.47729874 | loss-std:   4.57007551
+Step: 0 | Loss-mean:   7.52812529 | loss-std:   3.68673491
+Step: 1 | Loss-mean:  12.92731094 | loss-std:   5.37727213
+Step: 2 | Loss-mean:  14.05292702 | loss-std:   5.12541866
+Step: 0 | Loss-mean:   9.36366940 | loss-std:   3.15852451
+Step: 1 | Loss-mean:  12.86989594 | loss-std:   4.15912533
+Step: 2 | Loss-mean:  13.50660419 | loss-std:   3.83959198
+Step: 0 | Loss-mean:   8.07015228 | loss-std:   4.03604221
+Step: 1 | Loss-mean:  12.27122498 | loss-std:   5.86540890
+Step: 2 | Loss-mean:  13.45325661 | loss-std:   4.72782087
+Step: 0 | Loss-mean:   8.73393440 | loss-std:   3.05930352
+Step: 1 | Loss-mean:  13.26550579 | loss-std:   4.78033829
+Step: 2 | Loss-mean:  13.51470566 | loss-std:   4.05398464
+Step: 0 | Loss-mean:   9.25737762 | loss-std:   4.06382322
+Step: 1 | Loss-mean:  13.57693481 | loss-std:   5.10231495
+Step: 2 | Loss-mean:  13.43333817 | loss-std:   4.39273405
+Step: 0 | Loss-mean:   8.44626141 | loss-std:   2.40884042
+Step: 1 | Loss-mean:  11.34451294 | loss-std:   2.65959334
+Step: 2 | Loss-mean:  11.72932053 | loss-std:   2.36752009
+Step: 0 | Loss-mean:  10.10185432 | loss-std:   4.82070398
+Step: 1 | Loss-mean:  13.38400555 | loss-std:   4.76905966
+Step: 2 | Loss-mean:  13.26465225 | loss-std:   3.48151135
+Step: 0 | Loss-mean:  10.08329773 | loss-std:   2.62513638
+Step: 1 | Loss-mean:  13.24879646 | loss-std:   4.19728470
+Step: 2 | Loss-mean:  12.95516396 | loss-std:   3.19452739
+Step: 0 | Loss-mean:  10.16399956 | loss-std:   3.92661095
+Step: 1 | Loss-mean:  12.95166206 | loss-std:   4.72949076
+Step: 2 | Loss-mean:  12.38132572 | loss-std:   3.98451161
+Step: 0 | Loss-mean:   8.19999599 | loss-std:   3.33628035
+Step: 1 | Loss-mean:  13.19637966 | loss-std:   4.89857340
+Step: 2 | Loss-mean:  12.38418007 | loss-std:   4.13619041

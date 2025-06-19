@@ -1,0 +1,94 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+cherish
+4
+torch.Size([12])
+teacher now
+torch.Size([3])
+/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Total parameters in U-Net:      60417164
+Setting up optimizer...
+Training for 200 kimg...
+
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Student output stats:
+Min: -239.67189025878906
+Max: 231.2861785888672
+Mean: -0.10407835245132446
+Std: 47.34294891357422
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.73901367 | loss-std:  15.15582943
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Student output stats:
+Min: -21.818307876586914
+Max: 21.038715362548828
+Mean: -0.010205301456153393
+Std: 4.093138694763184
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 113.06841278 | loss-std:   1.52344859
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Student output stats:
+Min: -0.23224833607673645
+Max: 0.1804879754781723
+Mean: -0.0013146363198757172
+Std: 0.035365521907806396
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.70228577 | loss-std:   6.42193222
+tick 0     kimg 0.3       time 36s          sec/tick 32.3    sec/kimg 126.11  maintenance 3.3    gpumem 20.11  reserved 20.26 
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Student output stats:
+Min: -250.1035919189453
+Max: 239.82098388671875
+Mean: 0.015799634158611298
+Std: 47.3588981628418
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.95751953 | loss-std:  14.74466133
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Student output stats:
+Min: -22.817941665649414
+Max: 21.813125610351562
+Mean: -0.005281656980514526
+Std: 4.091744422912598
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 112.90682983 | loss-std:   1.61193478
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+0
+1
+2
+3
+Student output stats:
+Min: -0.41890785098075867
+Max: 0.20175117254257202
+Mean: -0.007455314509570599
+Std: 0.042411740869283676
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.34183121 | loss-std:   7.22465706
+
+Aborted!

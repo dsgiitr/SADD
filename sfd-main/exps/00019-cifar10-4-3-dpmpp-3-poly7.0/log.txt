@@ -1,0 +1,36 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Total parameters in U-Net:      60396419
+Setting up optimizer...
+Training for 1 kimg...
+
+Step: 0 | Loss-mean: 1133.74755859 | loss-std:  15.13022232
+Step: 1 | Loss-mean: 131.64993286 | loss-std:   1.73613405
+Step: 2 | Loss-mean:  27.96602631 | loss-std:   6.64314365
+tick 0     kimg 0.1       time 11s          sec/tick 8.8     sec/kimg 68.52   maintenance 2.6    gpumem 13.04  reserved 13.39 
+Step: 0 | Loss-mean: 1134.30004883 | loss-std:  14.30003929
+Step: 1 | Loss-mean: 131.61352539 | loss-std:   1.69619524
+Step: 2 | Loss-mean:  27.92660904 | loss-std:   6.82736301
+Step: 0 | Loss-mean: 1137.13378906 | loss-std:  14.46768379
+Step: 1 | Loss-mean: 131.86863708 | loss-std:   1.71412742
+Step: 2 | Loss-mean:  28.31196976 | loss-std:   6.67433023
+Step: 0 | Loss-mean: 1133.64013672 | loss-std:  14.43973923
+Step: 1 | Loss-mean: 131.41931152 | loss-std:   1.63735187
+Step: 2 | Loss-mean:  27.35594940 | loss-std:   6.04551172
+Step: 0 | Loss-mean: 1132.53051758 | loss-std:  15.44765949
+Step: 1 | Loss-mean: 131.22325134 | loss-std:   1.79076266
+Step: 2 | Loss-mean:  27.53734970 | loss-std:   7.32210159
+Step: 0 | Loss-mean: 1134.23510742 | loss-std:  15.80754662
+Step: 1 | Loss-mean: 131.39833069 | loss-std:   1.78643203
+Step: 2 | Loss-mean:  26.51116943 | loss-std:   6.59961081
+Step: 0 | Loss-mean: 1131.16918945 | loss-std:  15.69115448
+Step: 1 | Loss-mean: 130.96942139 | loss-std:   1.81857014
+Step: 2 | Loss-mean:  27.89057732 | loss-std:   6.81795740
+Step: 0 | Loss-mean: 1134.92993164 | loss-std:  14.17671490
+Step: 1 | Loss-mean: 131.41735840 | loss-std:   1.61857998
+Step: 2 | Loss-mean:  27.52694702 | loss-std:   6.89388323
+tick 1     kimg 1.0       time 45s          sec/tick 34.0    sec/kimg 37.94   maintenance 0.0    gpumem 8.95   reserved 9.38  
+
+Exiting...

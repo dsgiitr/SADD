@@ -1,0 +1,65 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+cherish
+4
+torch.Size([12])
+teacher now
+torch.Size([3])
+/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Total parameters in U-Net:      60417164
+Setting up optimizer...
+Training for 200 kimg...
+
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 0 | Loss-mean: 1132.34912109 | loss-std:  13.93712425
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 1 | Loss-mean: 113.11367035 | loss-std:   1.52592194
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 2 | Loss-mean:  28.31534958 | loss-std:   7.38466597
+tick 0     kimg 0.3       time 36s          sec/tick 32.9    sec/kimg 128.32  maintenance 3.2    gpumem 20.11  reserved 20.26 
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 0 | Loss-mean: 1132.42333984 | loss-std:  14.63050270
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 1 | Loss-mean: 112.80350494 | loss-std:   1.47679019
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 2 | Loss-mean:  26.72253418 | loss-std:   6.94973230
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 0 | Loss-mean: 1131.93078613 | loss-std:  14.91624165
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 1 | Loss-mean: 112.59582520 | loss-std:   1.62264693
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 2 | Loss-mean:  26.71076965 | loss-std:   6.82508326
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 0 | Loss-mean: 1132.89184570 | loss-std:  14.41074944
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 1 | Loss-mean: 112.49069214 | loss-std:   1.61910856
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 2 | Loss-mean:  27.26877975 | loss-std:   7.09799528
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 0 | Loss-mean: 1132.19458008 | loss-std:  15.27252769
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 1 | Loss-mean: 112.31198120 | loss-std:   1.54483902
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 2 | Loss-mean:  25.93199158 | loss-std:   7.14899015
+tick 1     kimg 1.3       time 1m 43s       sec/tick 66.6    sec/kimg 65.01   maintenance 0.0    gpumem 16.66  reserved 20.88 
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 0 | Loss-mean: 1129.67468262 | loss-std:  15.48863220
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 1 | Loss-mean: 111.87287140 | loss-std:   1.63251936
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 2 | Loss-mean:  24.99898529 | loss-std:   6.55924892
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 0 | Loss-mean: 1131.50610352 | loss-std:  14.69293308
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 1 | Loss-mean: 111.83329010 | loss-std:   1.58172977
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 2 | Loss-mean:  25.29093933 | loss-std:   6.84976625
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 0 | Loss-mean: 1130.72424316 | loss-std:  14.25419044
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 1 | Loss-mean: 111.53578949 | loss-std:   1.52024603
+torch.Size([256, 4, 3, 32, 32])   shape for denoised_multistep
+Step: 2 | Loss-mean:  23.94101906 | loss-std:   6.99219608
+
+Aborted!

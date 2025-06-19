@@ -1,0 +1,30 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Total parameters in U-Net:      60396419
+Setting up optimizer...
+Training for 1 kimg...
+
+====Printng tsteps shape=======
+torch.Size([13])
+====Printed=======
+Teacher trajectory length: 13
+Teacher trajectory shape: inside get teacher torch.Size([13, 128, 3, 32, 32])
+======Printing Teacher traj shape====
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/teamspace/studios/this_studio/sfd-main/train.py", line 155, in <module>
+[rank0]:     main()
+[rank0]:   File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/click/core.py", line 1161, in __call__
+[rank0]:     return self.main(*args, **kwargs)
+[rank0]:   File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/click/core.py", line 1082, in main
+[rank0]:     rv = self.invoke(ctx)
+[rank0]:   File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/click/core.py", line 1443, in invoke
+[rank0]:     return ctx.invoke(self.callback, **ctx.params)
+[rank0]:   File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/click/core.py", line 788, in invoke
+[rank0]:     return __callback(*args, **kwargs)
+[rank0]:   File "/teamspace/studios/this_studio/sfd-main/train.py", line 150, in main
+[rank0]:     training_loop.training_loop(**c)
+[rank0]:   File "/teamspace/studios/this_studio/sfd-main/training/training_loop.py", line 271, in training_loop
+[rank0]:     print(teacher_traj.shape)
+[rank0]: AttributeError: 'list' object has no attribute 'shape'

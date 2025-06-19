@@ -1,0 +1,54 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Total parameters in U-Net:      60396419
+Setting up optimizer...
+Training for 1 kimg...
+
+====Printng tsteps shape=======
+torch.Size([13])
+====Printed=======
+Teacher trajectory length: 13
+Teacher trajectory shape: inside get teacher torch.Size([13, 128, 3, 32, 32])
+======Printing Teacher traj shape====
+num_acc_rounds 1
+1
+torch.Size([13, 128, 3, 32, 32])
+======Printed Teacher traj shape======
+Student tsteps length: 5
+Start student sampling with step_idx:  tensor([0])
+Student tsteps: tensor([80.0000, 51.1571, 31.7298, 19.0034, 10.9293], device='cuda:0')
+Student start index: tensor([0])
+for now denoised is of shape [B, C, H, W] we will copy it to [B, num_future_steps, C, H, W]
+torch.Size([128, 3, 32, 32])   shape for denoised_multistep
+torch.Size([128, 4, 3, 32, 32])   shape for denoised_multistep after repeat
+Student trajectory shape: torch.Size([4, 128, 3, 32, 32])
+teacher_out shape: in student loss  torch.Size([4, 128, 3, 32, 32])
+Step: 0 | Loss-mean: 2266.98193359 | loss-std: 1481.54138184
+Student tsteps length: 5
+Start student sampling with step_idx:  tensor([1])
+Student tsteps: tensor([10.9293,  5.9941,  3.1071,  1.5045,  0.6699], device='cuda:0')
+Student start index: tensor([4])
+for now denoised is of shape [B, C, H, W] we will copy it to [B, num_future_steps, C, H, W]
+torch.Size([128, 3, 32, 32])   shape for denoised_multistep
+torch.Size([128, 4, 3, 32, 32])   shape for denoised_multistep after repeat
+Student trajectory shape: torch.Size([4, 128, 3, 32, 32])
+teacher_out shape: in student loss  torch.Size([4, 128, 3, 32, 32])
+Step: 1 | Loss-mean: 264.17401123 | loss-std: 132.10939026
+Student tsteps length: 5
+Start student sampling with step_idx:  tensor([2])
+Student tsteps: tensor([0.6699, 0.2683, 0.0936, 0.0271, 0.0060], device='cuda:0')
+Student start index: tensor([8])
+for now denoised is of shape [B, C, H, W] we will copy it to [B, num_future_steps, C, H, W]
+torch.Size([128, 3, 32, 32])   shape for denoised_multistep
+torch.Size([128, 4, 3, 32, 32])   shape for denoised_multistep after repeat
+Student trajectory shape: torch.Size([4, 128, 3, 32, 32])
+teacher_out shape: in student loss  torch.Size([4, 128, 3, 32, 32])
+Step: 2 | Loss-mean:  57.29330444 | loss-std:   2.95622993
+tick 0     kimg 0.1       time 11s          sec/tick 8.9     sec/kimg 69.89   maintenance 2.5    gpumem 16.10  reserved 17.28 
+====Printng tsteps shape=======
+torch.Size([13])
+====Printed=======
+
+Aborted!

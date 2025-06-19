@@ -1,0 +1,24 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/teamspace/studios/this_studio/sfd-main/train.py", line 155, in <module>
+[rank0]:     main()
+[rank0]:   File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/click/core.py", line 1161, in __call__
+[rank0]:     return self.main(*args, **kwargs)
+[rank0]:   File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/click/core.py", line 1082, in main
+[rank0]:     rv = self.invoke(ctx)
+[rank0]:   File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/click/core.py", line 1443, in invoke
+[rank0]:     return ctx.invoke(self.callback, **ctx.params)
+[rank0]:   File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/click/core.py", line 788, in invoke
+[rank0]:     return __callback(*args, **kwargs)
+[rank0]:   File "/teamspace/studios/this_studio/sfd-main/train.py", line 150, in main
+[rank0]:     training_loop.training_loop(**c)
+[rank0]:   File "/teamspace/studios/this_studio/sfd-main/training/training_loop.py", line 191, in training_loop
+[rank0]:     net_copy, net, model_source = create_model(dataset_name, model_path, guidance_type, guidance_rate, device, is_second_stage)
+[rank0]:   File "/teamspace/studios/this_studio/sfd-main/training/training_loop.py", line 86, in create_model
+[rank0]:     net_student.load_state_dict(net_temp.state_dict(), strict=False)
+[rank0]:   File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/nn/modules/module.py", line 2593, in load_state_dict
+[rank0]:     raise RuntimeError(
+[rank0]: RuntimeError: Error(s) in loading state_dict for EDMPrecond:
+[rank0]: 	size mismatch for model.dec.32x32_aux_conv.weight: copying a param with shape torch.Size([3, 256, 3, 3]) from checkpoint, the shape in current model is torch.Size([12, 256, 3, 3]).
+[rank0]: 	size mismatch for model.dec.32x32_aux_conv.bias: copying a param with shape torch.Size([3]) from checkpoint, the shape in current model is torch.Size([12]).

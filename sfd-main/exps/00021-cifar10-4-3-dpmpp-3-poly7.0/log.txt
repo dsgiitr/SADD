@@ -1,0 +1,1054 @@
+Model already exists: ../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl
+Loading the pre-trained diffusion model from "../sfd-main/src/cifar10/edm-cifar10-32x32-uncond-vp.pkl"...
+/home/zeus/miniconda3/envs/cloudspace/lib/python3.9/site-packages/torch/distributed/distributed_c10d.py:4631: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Total parameters in U-Net:      60396419
+Setting up optimizer...
+Training for 200 kimg...
+
+Student output stats:
+Min: -254.3483428955078
+Max: 277.09100341796875
+Mean: 0.05824890732765198
+Std: 48.70287322998047
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1134.01855469 | loss-std:  15.13459301
+Student output stats:
+Min: -26.809579849243164
+Max: 29.21956443786621
+Mean: -0.007605794817209244
+Std: 4.927226543426514
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.65121460 | loss-std:   1.73352599
+Student output stats:
+Min: -0.16415145993232727
+Max: 0.16259562969207764
+Mean: -0.005045840051025152
+Std: 0.026409994810819626
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.62324524 | loss-std:   6.67760563
+tick 0     kimg 0.3       time 21s          sec/tick 17.3    sec/kimg 67.49   maintenance 3.3    gpumem 20.10  reserved 20.44 
+Student output stats:
+Min: -276.2252197265625
+Max: 246.49679565429688
+Mean: -0.0883818119764328
+Std: 48.69434356689453
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.79992676 | loss-std:  13.78492928
+Student output stats:
+Min: -29.119295120239258
+Max: 26.05912971496582
+Mean: -0.032664939761161804
+Std: 4.924369812011719
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.51953125 | loss-std:   1.54229331
+Student output stats:
+Min: -0.18478232622146606
+Max: 0.1559165120124817
+Mean: -0.006332490127533674
+Std: 0.02655566670000553
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  28.25123215 | loss-std:   6.35640097
+Student output stats:
+Min: -244.12896728515625
+Max: 252.11607360839844
+Mean: 0.017458539456129074
+Std: 48.76978302001953
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1135.52624512 | loss-std:  14.88085651
+Student output stats:
+Min: -25.633581161499023
+Max: 26.614328384399414
+Mean: -0.015027820132672787
+Std: 4.930126667022705
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.71490479 | loss-std:   1.71553957
+Student output stats:
+Min: -0.16387829184532166
+Max: 0.15885627269744873
+Mean: -0.0072430893778800964
+Std: 0.026789013296365738
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  28.41681290 | loss-std:   6.51604414
+Student output stats:
+Min: -247.27435302734375
+Max: 232.65557861328125
+Mean: 0.0008058715611696243
+Std: 48.6468391418457
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.65258789 | loss-std:  14.34555531
+Student output stats:
+Min: -25.975669860839844
+Max: 24.34745979309082
+Mean: -0.019202956929802895
+Std: 4.915770053863525
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.30511475 | loss-std:   1.65891314
+Student output stats:
+Min: -0.1666361540555954
+Max: 0.1423780620098114
+Mean: -0.00844570156186819
+Std: 0.027002988383173943
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.74187088 | loss-std:   6.55469608
+Student output stats:
+Min: -226.88302612304688
+Max: 233.55686950683594
+Mean: 0.06479103863239288
+Std: 48.691566467285156
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.66308594 | loss-std:  15.14415646
+Student output stats:
+Min: -23.939380645751953
+Max: 24.667505264282227
+Mean: -0.008893925696611404
+Std: 4.9187164306640625
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.39497375 | loss-std:   1.75375247
+Student output stats:
+Min: -0.16661161184310913
+Max: 0.15394943952560425
+Mean: -0.009351864457130432
+Std: 0.027386359870433807
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  28.22391510 | loss-std:   7.08959675
+tick 1     kimg 1.3       time 1m 00s       sec/tick 39.6    sec/kimg 38.70   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -243.66184997558594
+Max: 236.50791931152344
+Mean: 0.041843097656965256
+Std: 48.6906623840332
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.63989258 | loss-std:  14.41946220
+Student output stats:
+Min: -25.726421356201172
+Max: 24.861000061035156
+Mean: -0.013090613298118114
+Std: 4.9165239334106445
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.29354858 | loss-std:   1.65192628
+Student output stats:
+Min: -0.17626026272773743
+Max: 0.14021608233451843
+Mean: -0.01043396070599556
+Std: 0.02764075994491577
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  28.46689606 | loss-std:   6.35501003
+Student output stats:
+Min: -259.62823486328125
+Max: 230.7596893310547
+Mean: -0.042037397623062134
+Std: 48.66574478149414
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.05249023 | loss-std:  14.25738144
+Student output stats:
+Min: -27.327306747436523
+Max: 24.263721466064453
+Mean: -0.02632226049900055
+Std: 4.911812782287598
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.18446350 | loss-std:   1.61831594
+Student output stats:
+Min: -0.1696246862411499
+Max: 0.15052983164787292
+Mean: -0.011721368879079819
+Std: 0.028040552511811256
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.58654976 | loss-std:   6.23580408
+Student output stats:
+Min: -249.23887634277344
+Max: 264.85455322265625
+Mean: 0.03833833336830139
+Std: 48.68177795410156
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.41931152 | loss-std:  14.17130947
+Student output stats:
+Min: -26.256872177124023
+Max: 27.84225082397461
+Mean: -0.014852752909064293
+Std: 4.9110026359558105
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.21649170 | loss-std:   1.66299009
+Student output stats:
+Min: -0.1730271875858307
+Max: 0.16484451293945312
+Mean: -0.012720771133899689
+Std: 0.02828904055058956
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  26.73659897 | loss-std:   6.26037884
+Student output stats:
+Min: -251.74114990234375
+Max: 244.1304473876953
+Mean: -0.049807410687208176
+Std: 48.670780181884766
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.14648438 | loss-std:  13.75204754
+Student output stats:
+Min: -26.47861099243164
+Max: 25.58810806274414
+Mean: -0.029018109664320946
+Std: 4.908044338226318
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.09291077 | loss-std:   1.62845671
+Student output stats:
+Min: -0.18051406741142273
+Max: 0.14538267254829407
+Mean: -0.014109641313552856
+Std: 0.02871457114815712
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.19429016 | loss-std:   6.57223558
+tick 2     kimg 2.3       time 1m 41s       sec/tick 40.4    sec/kimg 39.43   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -241.05606079101562
+Max: 232.66302490234375
+Mean: -0.05584558844566345
+Std: 48.676124572753906
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.24389648 | loss-std:  14.67947769
+Student output stats:
+Min: -25.43138313293457
+Max: 24.443038940429688
+Mean: -0.02914259396493435
+Std: 4.906728744506836
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.02221680 | loss-std:   1.65540361
+Student output stats:
+Min: -0.1873122602701187
+Max: 0.14598307013511658
+Mean: -0.015482562594115734
+Std: 0.02909313514828682
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.18407822 | loss-std:   6.23691940
+Student output stats:
+Min: -256.65582275390625
+Max: 245.59271240234375
+Mean: -0.027885135263204575
+Std: 48.69439697265625
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.64245605 | loss-std:  14.83550835
+Student output stats:
+Min: -26.941726684570312
+Max: 25.841083526611328
+Mean: -0.025868749246001244
+Std: 4.906816005706787
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.03300476 | loss-std:   1.69447958
+Student output stats:
+Min: -0.18259550631046295
+Max: 0.14952754974365234
+Mean: -0.01677314005792141
+Std: 0.0295829176902771
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.57699394 | loss-std:   7.40859461
+Student output stats:
+Min: -235.6943359375
+Max: 236.0386199951172
+Mean: -0.010446183383464813
+Std: 48.75991439819336
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1135.15466309 | loss-std:  14.70709229
+Student output stats:
+Min: -24.763160705566406
+Max: 24.928804397583008
+Mean: -0.02456747554242611
+Std: 4.911499500274658
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.12084961 | loss-std:   1.69630551
+Student output stats:
+Min: -0.18676041066646576
+Max: 0.1502513289451599
+Mean: -0.018160415813326836
+Std: 0.03014853037893772
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.93406105 | loss-std:   6.49360132
+Student output stats:
+Min: -258.6053466796875
+Max: 248.95570373535156
+Mean: 0.028925959020853043
+Std: 48.731292724609375
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1134.47021484 | loss-std:  14.55819511
+Student output stats:
+Min: -27.138748168945312
+Max: 26.237590789794922
+Mean: -0.017896002158522606
+Std: 4.906797409057617
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 131.00477600 | loss-std:   1.67307746
+Student output stats:
+Min: -0.1981656402349472
+Max: 0.16616091132164001
+Mean: -0.01947658322751522
+Std: 0.03071991167962551
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  28.08732224 | loss-std:   6.72955465
+tick 3     kimg 3.3       time 2m 21s       sec/tick 40.5    sec/kimg 39.57   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -245.5535888671875
+Max: 236.2800750732422
+Mean: -0.0846845954656601
+Std: 48.708683013916016
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.94494629 | loss-std:  13.20669079
+Student output stats:
+Min: -25.710445404052734
+Max: 24.779773712158203
+Mean: -0.0373770035803318
+Std: 4.902489185333252
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.86012268 | loss-std:   1.53130174
+Student output stats:
+Min: -0.19273409247398376
+Max: 0.148931622505188
+Mean: -0.021072065457701683
+Std: 0.03150784969329834
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.53181458 | loss-std:   6.53449154
+Student output stats:
+Min: -241.39385986328125
+Max: 243.67149353027344
+Mean: -0.013077068142592907
+Std: 48.723304748535156
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1134.25781250 | loss-std:  13.89852619
+Student output stats:
+Min: -25.358966827392578
+Max: 25.5174617767334
+Mean: -0.025412391871213913
+Std: 4.902455806732178
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.85064697 | loss-std:   1.59760571
+Student output stats:
+Min: -0.195260152220726
+Max: 0.17230357229709625
+Mean: -0.022419994696974754
+Std: 0.03242046758532524
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  28.17821121 | loss-std:   6.86355591
+Student output stats:
+Min: -242.9741668701172
+Max: 258.3105163574219
+Mean: -0.08628138899803162
+Std: 48.638648986816406
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.27832031 | loss-std:  14.17192841
+Student output stats:
+Min: -25.636077880859375
+Max: 26.948143005371094
+Mean: -0.03779946267604828
+Std: 4.891489028930664
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.60848999 | loss-std:   1.64605010
+Student output stats:
+Min: -0.1991468071937561
+Max: 0.17641451954841614
+Mean: -0.024093102663755417
+Std: 0.03322511538863182
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.40655899 | loss-std:   7.12326908
+Student output stats:
+Min: -283.9415283203125
+Max: 239.37811279296875
+Mean: 0.0008925950969569385
+Std: 48.6717414855957
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.02490234 | loss-std:  14.41404438
+Student output stats:
+Min: -29.96054458618164
+Max: 25.244077682495117
+Mean: -0.023616239428520203
+Std: 4.893266201019287
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.65936279 | loss-std:   1.64569736
+Student output stats:
+Min: -0.27731168270111084
+Max: 0.15989843010902405
+Mean: -0.025595691055059433
+Std: 0.034476250410079956
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.64207649 | loss-std:   6.95500374
+tick 4     kimg 4.4       time 3m 01s       sec/tick 40.3    sec/kimg 39.33   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -271.7330627441406
+Max: 243.20770263671875
+Mean: -0.019063390791416168
+Std: 48.70267105102539
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.73034668 | loss-std:  14.66548252
+Student output stats:
+Min: -28.521127700805664
+Max: 25.54097557067871
+Mean: -0.028235649690032005
+Std: 4.894586563110352
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.62756348 | loss-std:   1.69988465
+Student output stats:
+Min: -0.22635427117347717
+Max: 0.16280913352966309
+Mean: -0.0273571964353323
+Std: 0.0359254851937294
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.49638557 | loss-std:   6.31275415
+Student output stats:
+Min: -242.81130981445312
+Max: 237.34848022460938
+Mean: -0.07263588160276413
+Std: 48.671302795410156
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.97802734 | loss-std:  14.94286060
+Student output stats:
+Min: -25.497793197631836
+Max: 24.786293029785156
+Mean: -0.03666086494922638
+Std: 4.889533042907715
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.54608154 | loss-std:   1.71630490
+Student output stats:
+Min: -0.22778332233428955
+Max: 0.16446201503276825
+Mean: -0.02919919788837433
+Std: 0.03752269968390465
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.61320686 | loss-std:   6.39606285
+Student output stats:
+Min: -237.91612243652344
+Max: 225.0833282470703
+Mean: 0.027551745995879173
+Std: 48.65940475463867
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.69995117 | loss-std:  13.58306789
+Student output stats:
+Min: -24.960317611694336
+Max: 23.65814208984375
+Mean: -0.021304592490196228
+Std: 4.886603832244873
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.41543579 | loss-std:   1.61333358
+Student output stats:
+Min: -0.23588170111179352
+Max: 0.15814732015132904
+Mean: -0.030701836571097374
+Std: 0.03953613340854645
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.43759155 | loss-std:   6.89264059
+Student output stats:
+Min: -262.7408752441406
+Max: 246.96304321289062
+Mean: 0.04940516874194145
+Std: 48.7065544128418
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.74853516 | loss-std:  15.99204540
+Student output stats:
+Min: -27.296342849731445
+Max: 26.009506225585938
+Mean: -0.018901944160461426
+Std: 4.88931131362915
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.51054382 | loss-std:   1.79568863
+Student output stats:
+Min: -0.23706091940402985
+Max: 0.16626015305519104
+Mean: -0.032395683228969574
+Std: 0.0414973609149456
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.66532516 | loss-std:   7.19992685
+tick 5     kimg 5.4       time 3m 42s       sec/tick 40.4    sec/kimg 39.45   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -246.00411987304688
+Max: 240.0994415283203
+Mean: -0.024227388203144073
+Std: 48.64857864379883
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.39404297 | loss-std:  14.45141125
+Student output stats:
+Min: -25.73539924621582
+Max: 25.122386932373047
+Mean: -0.03255186975002289
+Std: 4.881619453430176
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.28625488 | loss-std:   1.69085097
+Student output stats:
+Min: -0.24512873589992523
+Max: 0.168615460395813
+Mean: -0.03401670604944229
+Std: 0.0435158833861351
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.37746811 | loss-std:   7.26188135
+Student output stats:
+Min: -266.6975402832031
+Max: 236.13250732421875
+Mean: -0.11500721424818039
+Std: 48.574790954589844
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1130.65026855 | loss-std:  15.23391914
+Student output stats:
+Min: -27.942476272583008
+Max: 24.655094146728516
+Mean: -0.046954862773418427
+Std: 4.871916770935059
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.00686646 | loss-std:   1.71573412
+Student output stats:
+Min: -0.2614336311817169
+Max: 0.17363318800926208
+Mean: -0.03607647866010666
+Std: 0.04532477632164955
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.54648399 | loss-std:   6.70321798
+Student output stats:
+Min: -238.59133911132812
+Max: 245.97926330566406
+Mean: -0.06617733091115952
+Std: 48.620765686035156
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.70800781 | loss-std:  15.23854256
+Student output stats:
+Min: -25.02179718017578
+Max: 25.731224060058594
+Mean: -0.04039556533098221
+Std: 4.87396240234375
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.06652832 | loss-std:   1.72891283
+Student output stats:
+Min: -0.2575196921825409
+Max: 0.1762126386165619
+Mean: -0.038401778787374496
+Std: 0.04694027081131935
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  26.84269142 | loss-std:   6.72614861
+Student output stats:
+Min: -260.03125
+Max: 245.3990020751953
+Mean: -0.1224505603313446
+Std: 48.662330627441406
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.67187500 | loss-std:  14.60630417
+Student output stats:
+Min: -27.297191619873047
+Max: 25.612104415893555
+Mean: -0.05188586562871933
+Std: 4.875235557556152
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.09193420 | loss-std:   1.68281019
+Student output stats:
+Min: -0.2767481207847595
+Max: 0.16216841340065002
+Mean: -0.0412936806678772
+Std: 0.04857010766863823
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  26.75042725 | loss-std:   6.50399160
+tick 6     kimg 6.4       time 4m 22s       sec/tick 40.4    sec/kimg 39.45   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -253.0906982421875
+Max: 237.94252014160156
+Mean: -0.03682483360171318
+Std: 48.71735763549805
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.93530273 | loss-std:  13.34535503
+Student output stats:
+Min: -26.563325881958008
+Max: 24.733253479003906
+Mean: -0.03753585368394852
+Std: 4.878597736358643
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 130.17449951 | loss-std:   1.53424847
+Student output stats:
+Min: -0.28421664237976074
+Max: 0.18351249396800995
+Mean: -0.04393837973475456
+Std: 0.051471129059791565
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  28.07825279 | loss-std:   7.21727467
+Student output stats:
+Min: -275.068115234375
+Max: 242.94049072265625
+Mean: -0.045741260051727295
+Std: 48.58473587036133
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1130.81445312 | loss-std:  14.76204491
+Student output stats:
+Min: -28.888086318969727
+Max: 25.313749313354492
+Mean: -0.040955282747745514
+Std: 4.861789703369141
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 129.72721863 | loss-std:   1.69699121
+Student output stats:
+Min: -0.30235984921455383
+Max: 0.17922110855579376
+Mean: -0.045899808406829834
+Std: 0.05660117790102959
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  26.87020874 | loss-std:   7.12625837
+Student output stats:
+Min: -254.66026306152344
+Max: 236.50277709960938
+Mean: 0.0030506837647408247
+Std: 48.686912536621094
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.17065430 | loss-std:  15.08074379
+Student output stats:
+Min: -26.59556770324707
+Max: 24.607954025268555
+Mean: -0.034846674650907516
+Std: 4.868881702423096
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 129.87567139 | loss-std:   1.70917535
+Student output stats:
+Min: -0.3016136884689331
+Max: 0.1923026740550995
+Mean: -0.04783448576927185
+Std: 0.062468260526657104
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  26.93112564 | loss-std:   6.48611069
+Student output stats:
+Min: -241.1703643798828
+Max: 230.169677734375
+Mean: 0.027593329548835754
+Std: 48.6654052734375
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.64660645 | loss-std:  14.71099854
+Student output stats:
+Min: -25.294347763061523
+Max: 24.028671264648438
+Mean: -0.03108595870435238
+Std: 4.863495349884033
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 129.76715088 | loss-std:   1.70380163
+Student output stats:
+Min: -0.32858115434646606
+Max: 0.2014009654521942
+Mean: -0.049300383776426315
+Std: 0.06757833808660507
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  26.89118576 | loss-std:   6.96075296
+tick 7     kimg 7.4       time 5m 03s       sec/tick 40.4    sec/kimg 39.42   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -255.92819213867188
+Max: 258.2344970703125
+Mean: -0.014829836785793304
+Std: 48.60204315185547
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.14624023 | loss-std:  14.33237743
+Student output stats:
+Min: -26.607830047607422
+Max: 26.90751838684082
+Mean: -0.038034550845623016
+Std: 4.853620529174805
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 129.45504761 | loss-std:   1.63321149
+Student output stats:
+Min: -0.3517667055130005
+Max: 0.23428282141685486
+Mean: -0.04999088495969772
+Std: 0.07470152527093887
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  27.19171143 | loss-std:   7.26206732
+Student output stats:
+Min: -236.1571502685547
+Max: 243.93768310546875
+Mean: -0.06203928589820862
+Std: 48.71986389160156
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1133.89135742 | loss-std:  14.84758949
+Student output stats:
+Min: -24.774555206298828
+Max: 25.209793090820312
+Mean: -0.04744173213839531
+Std: 4.860411167144775
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 129.62362671 | loss-std:   1.66668677
+Student output stats:
+Min: -0.3673461973667145
+Max: 0.22854268550872803
+Mean: -0.05156426876783371
+Std: 0.08336842805147171
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  25.31864929 | loss-std:   6.36950636
+Student output stats:
+Min: -249.1829833984375
+Max: 243.29531860351562
+Mean: 0.010877068154513836
+Std: 48.59822082519531
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.04028320 | loss-std:  14.62519264
+Student output stats:
+Min: -26.052522659301758
+Max: 25.39586639404297
+Mean: -0.03488241881132126
+Std: 4.843794822692871
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 129.21749878 | loss-std:   1.66468012
+Student output stats:
+Min: -0.37944746017456055
+Max: 0.22605076432228088
+Mean: -0.05274009704589844
+Std: 0.0909469947218895
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  25.17542267 | loss-std:   6.75385094
+Student output stats:
+Min: -270.94976806640625
+Max: 249.3429412841797
+Mean: -0.014081916771829128
+Std: 48.63325500488281
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.80200195 | loss-std:  16.36382103
+Student output stats:
+Min: -28.068906784057617
+Max: 25.971675872802734
+Mean: -0.03960062190890312
+Std: 4.84312629699707
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 129.17242432 | loss-std:   1.85104549
+Student output stats:
+Min: -0.42841413617134094
+Max: 0.2612023949623108
+Mean: -0.053530625998973846
+Std: 0.10185381770133972
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  25.35391426 | loss-std:   6.50758600
+tick 8     kimg 8.4       time 5m 43s       sec/tick 40.4    sec/kimg 39.43   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -268.61053466796875
+Max: 226.4736785888672
+Mean: 0.00394572876393795
+Std: 48.60514450073242
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.14013672 | loss-std:  14.64811039
+Student output stats:
+Min: -27.899030685424805
+Max: 23.573802947998047
+Mean: -0.036204107105731964
+Std: 4.835631847381592
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 128.93731689 | loss-std:   1.69342852
+Student output stats:
+Min: -0.44783687591552734
+Max: 0.2675614356994629
+Mean: -0.054937124252319336
+Std: 0.11323051154613495
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  25.50033569 | loss-std:   6.76839638
+Student output stats:
+Min: -248.839111328125
+Max: 252.09634399414062
+Mean: 0.02927878499031067
+Std: 48.56776428222656
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1130.25622559 | loss-std:  13.01930904
+Student output stats:
+Min: -25.9401912689209
+Max: 26.070484161376953
+Mean: -0.03116513043642044
+Std: 4.827473163604736
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 128.77156067 | loss-std:   1.57121837
+Student output stats:
+Min: -0.44670674204826355
+Max: 0.28684794902801514
+Mean: -0.056402355432510376
+Std: 0.12223579734563828
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  25.55644608 | loss-std:   7.47539806
+Student output stats:
+Min: -257.73486328125
+Max: 232.43380737304688
+Mean: 0.08331405371427536
+Std: 48.60520553588867
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.11132812 | loss-std:  14.49907684
+Student output stats:
+Min: -26.850236892700195
+Max: 24.056400299072266
+Mean: -0.02086205780506134
+Std: 4.8251566886901855
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 128.68533325 | loss-std:   1.66874349
+Student output stats:
+Min: -0.49776965379714966
+Max: 0.31650274991989136
+Mean: -0.05703262984752655
+Std: 0.1339302808046341
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  24.55845070 | loss-std:   6.50586414
+Student output stats:
+Min: -230.98313903808594
+Max: 226.64463806152344
+Mean: 0.0020244047045707703
+Std: 48.64811706542969
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1132.07373047 | loss-std:  15.10619831
+Student output stats:
+Min: -24.023164749145508
+Max: 23.441181182861328
+Mean: -0.03303869068622589
+Std: 4.824296951293945
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 128.64341736 | loss-std:   1.72435009
+Student output stats:
+Min: -0.5390753746032715
+Max: 0.3291579484939575
+Mean: -0.05528279393911362
+Std: 0.1449965536594391
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  24.34438515 | loss-std:   6.86333370
+tick 9     kimg 9.5       time 6m 23s       sec/tick 40.4    sec/kimg 39.43   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -239.39077758789062
+Max: 247.0401153564453
+Mean: -0.04658602178096771
+Std: 48.633419036865234
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.73632812 | loss-std:  13.89925957
+Student output stats:
+Min: -24.98781967163086
+Max: 25.540658950805664
+Mean: -0.03684857115149498
+Std: 4.817063331604004
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 128.43420410 | loss-std:   1.57851696
+Student output stats:
+Min: -0.5686109662055969
+Max: 0.35145121812820435
+Mean: -0.056231867522001266
+Std: 0.1557508111000061
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  24.25643921 | loss-std:   6.59781551
+Student output stats:
+Min: -252.934814453125
+Max: 245.4316864013672
+Mean: -0.030891049653291702
+Std: 48.60020446777344
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1130.93249512 | loss-std:  13.53409290
+Student output stats:
+Min: -26.26250648498535
+Max: 25.462129592895508
+Mean: -0.03545195981860161
+Std: 4.8091912269592285
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 128.21887207 | loss-std:   1.53231978
+Student output stats:
+Min: -0.607872486114502
+Max: 0.3766382038593292
+Mean: -0.05982691049575806
+Std: 0.16839180886745453
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  24.25066185 | loss-std:   6.63339996
+Student output stats:
+Min: -258.9499816894531
+Max: 241.4093017578125
+Mean: -0.0567890927195549
+Std: 48.63116455078125
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.62817383 | loss-std:  14.76088428
+Student output stats:
+Min: -26.909942626953125
+Max: 25.058547973632812
+Mean: -0.04205235093832016
+Std: 4.807016849517822
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 128.11174011 | loss-std:   1.65680695
+Student output stats:
+Min: -0.6139624714851379
+Max: 0.41303446888923645
+Mean: -0.06652523577213287
+Std: 0.18024294078350067
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  24.16131973 | loss-std:   6.78537226
+Student output stats:
+Min: -241.96966552734375
+Max: 246.48146057128906
+Mean: -0.08600624650716782
+Std: 48.60689926147461
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.06152344 | loss-std:  14.20388889
+Student output stats:
+Min: -25.368879318237305
+Max: 25.379112243652344
+Mean: -0.05087585747241974
+Std: 4.799469947814941
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 127.89167786 | loss-std:   1.61957061
+Student output stats:
+Min: -0.6317089200019836
+Max: 0.47345244884490967
+Mean: -0.07276122272014618
+Std: 0.19322898983955383
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  23.99293137 | loss-std:   6.35779285
+tick 10    kimg 10.5      time 7m 04s       sec/tick 40.4    sec/kimg 39.45   maintenance 0.0    gpumem 16.65  reserved 17.15 
+Student output stats:
+Min: -266.75592041015625
+Max: 235.27813720703125
+Mean: 0.05474003404378891
+Std: 48.60668182373047
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 0 | Loss-mean: 1131.05163574 | loss-std:  14.55842972
+Student output stats:
+Min: -27.670547485351562
+Max: 24.23478889465332
+Mean: -0.033354807645082474
+Std: 4.794323921203613
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 1 | Loss-mean: 127.74578857 | loss-std:   1.65972769
+Student output stats:
+Min: -0.6861623525619507
+Max: 0.5100382566452026
+Mean: -0.07630789279937744
+Std: 0.20686177909374237
+Any NaN in student_out? False
+Any Inf in student_out? False
+Step: 2 | Loss-mean:  23.52459335 | loss-std:   7.00645733
+Student output stats:
+Min: nan
+Max: nan
+Mean: nan
+Std: nan
+Any NaN in student_out? True
+Any Inf in student_out? False
+Step: 0 | Loss-mean:          nan | loss-std:          nan
+Student output stats:
+Min: nan
+Max: nan
+Mean: nan
+Std: nan
+Any NaN in student_out? True
+Any Inf in student_out? False
+Step: 1 | Loss-mean:          nan | loss-std:          nan
+Student output stats:
+Min: nan
+Max: nan
+Mean: nan
+Std: nan
+Any NaN in student_out? True
+Any Inf in student_out? False
+Step: 2 | Loss-mean:          nan | loss-std:          nan
+Meet nan, disable fp16!
+
+Aborted!
