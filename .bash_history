@@ -46,3 +46,6 @@ git commit -m "nothing major"
 git pull origin main
 git push origin main
 git status
+git add .
+git commit -m "removed reduntant code"
+git push origin main
