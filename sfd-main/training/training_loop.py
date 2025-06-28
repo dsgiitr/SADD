@@ -18,6 +18,7 @@ from solver_utils import get_schedule
 from models.ldm.util import instantiate_from_config
 from torch_utils.download_util import check_file_by_key
 
+from torch.utils.tensorboard import SummaryWriter
 #----------------------------------------------------------------------------
 # Load pre-trained models from the LDM codebase (https://github.com/CompVis/latent-diffusion) 
 # and Stable Diffusion codebase (https://github.com/CompVis/stable-diffusion)
@@ -43,7 +44,12 @@ def load_ldm_model(config, ckpt, verbose=False):
 
 #----------------------------------------------------------------------------
 
-def create_model(dataset_name=None, model_path=None, guidance_type=None, guidance_rate=None, device=None, is_second_stage=False):
+def create_model(dataset_name=None, model_path=None, guidance_type=None, guidance_rate=None, device=None, is_second_stage=False, num_repeats=1):
+    print("Function Parameters:")
+    for key, value in locals().items():
+        print(f"{key}: {value}")
+
+    net_student = None
     if is_second_stage: # for second-stage distillation
         assert model_path is not None
         dist.print0(f'Loading the second-stage teacher model from "{model_path}"...')
@@ -78,9 +84,18 @@ def create_model(dataset_name=None, model_path=None, guidance_type=None, guidanc
         net = dnnlib.util.construct_class_by_name(**network_kwargs, **interface_kwargs) # subclass of torch.nn.Module
         net.to(device)
         net.load_state_dict(net_temp.state_dict(), strict=False)
+
+        network_kwargs.update(repeat=num_repeats)
+        net_student = dnnlib.util.construct_class_by_name(**network_kwargs, **interface_kwargs)
+        net_student.to(device)
+        net_student.load_state_dict(net_temp.state_dict(), strict=False)
+
         del net_temp
+
         net.sigma_min = 0.006
         net.sigma_max = 80.0
+        net_student.sigma_min = 0.006
+        net_student.sigma_max = 80.0
         model_source = 'edm'
     elif dataset_name in ['lsun_bedroom_ldm', 'ffhq_ldm', 'ms_coco']:   # models from LDM
         from omegaconf import OmegaConf
@@ -107,7 +122,7 @@ def create_model(dataset_name=None, model_path=None, guidance_type=None, guidanc
     else:
         raise ValueError(f"Unsupported dataset_name: {dataset_name}")
     
-    return net, model_source
+    return net, net_student, model_source
 
 #----------------------------------------------------------------------------
 # Check model structure
@@ -149,16 +164,18 @@ def training_loop(
     is_second_stage     = False,
     **kwargs,
 ):
-    # Initialize.
+    if dist.get_rank() == 0:
+        writer = SummaryWriter(run_dir, 'tensorboard_logs')
+
     start_time = time.time()
     np.random.seed((seed * dist.get_world_size() + dist.get_rank()) % (1 << 31))
     torch.manual_seed(np.random.randint(1 << 31))
+
     torch.backends.cudnn.benchmark = cudnn_benchmark
     torch.backends.cudnn.allow_tf32 = False
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
 
-    # Select batch size per GPU.
     batch_gpu_total = batch_size // dist.get_world_size()
     if batch_gpu is None or batch_gpu > batch_gpu_total:
         batch_gpu = batch_gpu_total
@@ -166,46 +183,46 @@ def training_loop(
     assert batch_size == batch_gpu * num_acc_rounds * dist.get_world_size()
    
     if dataset_name in ['ms_coco']:
-        # Loading MS-COCO captions for FID-30k evaluaion
-        # We use the selected 30k captions from https://github.com/boomb0om/text2image-benchmark
         prompt_path, _ = check_file_by_key('prompts')
         sample_captions = []
         with open(prompt_path, 'r') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                text = row['text']
-                sample_captions.append(text)
+                sample_captions.append(row['text'])
 
-    # Load pre-trained diffusion model.
     if dist.get_rank() != 0:
-        torch.distributed.barrier()         # rank 0 goes first
+        torch.distributed.barrier()
 
-    net, model_source = create_model(dataset_name, model_path, guidance_type, guidance_rate, device, is_second_stage)
+    print(kwargs)
+    if loss_kwargs["use_repeats"]:
+        net_copy, net, model_source = create_model(dataset_name, model_path, guidance_type, guidance_rate, device, is_second_stage, num_repeats=loss_kwargs["M"]+1)
+    else:
+        net_copy, net, model_source = create_model(dataset_name, model_path, guidance_type, guidance_rate, device, is_second_stage, num_repeats=1)
+    np.random.seed((seed * dist.get_world_size() + dist.get_rank()) % (1 << 31))
+    torch.manual_seed(np.random.randint(1 << 31))
+
     if dataset_name in ['ms_coco']:
-        net.guidance_rate = 1.0             # training with guidance_rate=1.0, sampling with specified guidance_rate
-    net.use_fp16 = True                     # use half precision to accelerate training
-    net_copy = copy.deepcopy(net).eval()    # to be the teacher
+        net.guidance_rate = 1.0
+    net.use_fp16 = True
+    net_copy.eval().requires_grad_(False) # CP: Original code did not set requires_grad to False, but it is better to do so.
+    # net_copy.use_fp16 = True
     net.train().requires_grad_(True)
 
     if dist.get_rank() == 0:
-        torch.distributed.barrier()         # other ranks follow
-    
-    # Check model structure
-    # print_network_layers(net)
+        torch.distributed.barrier()
 
-    # Check model parameters
-    total_params_unet = 0
-    for param in net.parameters():
-        total_params_unet += param.numel()
+    total_params_unet = sum(p.numel() for p in net.parameters())
     dist.print0("Total parameters in U-Net:     ", total_params_unet)
     
+    
+    # Setup optimizer.
+
     # Setup optimizer.
     dist.print0('Setting up optimizer...')
     loss_kwargs.update(sigma_min=net.sigma_min, sigma_max=net.sigma_max, model_source=model_source)
     loss_fn = dnnlib.util.construct_class_by_name(**loss_kwargs)
-    optimizer = dnnlib.util.construct_class_by_name(params=net.parameters(), **optimizer_kwargs) # subclass of torch.optim.Optimizer
-    
-    # Record args for sampling
+    optimizer = dnnlib.util.construct_class_by_name(params=net.parameters(), **optimizer_kwargs)
+
     net.training_kwargs = loss_kwargs
     net.training_kwargs['dataset_name'] = dataset_name
     net.training_kwargs['guidance_type'] = guidance_type
@@ -213,9 +230,7 @@ def training_loop(
 
     ddp = torch.nn.parallel.DistributedDataParallel(net, device_ids=[device], broadcast_buffers=False, find_unused_parameters=True)
 
-    # Train.
     dist.print0(f'Training for {total_kimg} kimg...')
-    dist.print0()
     cur_nimg = 0
     cur_tick = 0
     tick_start_nimg = cur_nimg
@@ -224,12 +239,13 @@ def training_loop(
     dist.update_progress(cur_nimg // 1000, total_kimg)
     stats_jsonl = None
     rig = RandomIntGenerator()
-    num_acc_rounds = 128 // batch_size if dataset_name == 'ms_coco' else 1      # number of accumulation rounds, force 128 for stable diffusion
+    num_acc_rounds = 128 // batch_size if dataset_name == 'ms_coco' else 1
     batch_gpu_total = num_acc_rounds * batch_gpu
     if guidance_type == 'cfg' and dataset_name in ['ms_coco']:
         with torch.no_grad():
             uc = net.model.get_learned_conditioning(batch_gpu * [""])
     loss = torch.zeros(1,)
+
     while True:
         if torch.isnan(loss).any().item():
             net.use_fp16 = False 
@@ -256,7 +272,6 @@ def training_loop(
             else:                                                           # EDM models
                 labels = [torch.eye(net.label_dim, device=device)[torch.randint(net.label_dim, size=[batch_gpu], device=device)] for k in range(num_acc_rounds)]
                 
-        # Generate teacher trajectories in every first step
         with torch.no_grad():
             if guidance_type in ['uncond', 'cfg']:      # LDM and SD models
                 with autocast("cuda"):
@@ -265,19 +280,29 @@ def training_loop(
             else:
                 teacher_traj = [loss_fn.get_teacher_traj(net=net_copy, tensor_in=latents[k], labels=labels[k]) for k in range(num_acc_rounds)]
 
-        # Perform training step by step
         for step_idx in range(loss_fn.num_steps - 1):
+            start = step_idx * (loss_fn.M + 1) + 1
+            end = start + (loss_fn.M + 1)
+
             optimizer.zero_grad(set_to_none=True)
-            
+
             # Calculate loss
             for round_idx in range(num_acc_rounds):
                 with misc.ddp_sync(ddp, (round_idx == num_acc_rounds - 1)):
-                    if guidance_type in ['uncond', 'cfg']:      # LDM and SD models
+                    if guidance_type in ['uncond', 'cfg']:
                         with autocast("cuda"):
-                            loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx], condition=c[round_idx], unconditional_condition=uc)
+                            # loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx], condition=c[round_idx], unconditional_condition=uc)
+                            loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][start:end], condition=c[round_idx], unconditional_condition=uc)
                     else:
-                        loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx])                        
-                    latents[round_idx] = stu_out                # start point in next loop
+                        loss, stu_out = loss_fn(
+                            net=ddp,
+                            tensor_in=latents[round_idx],
+                            labels=labels[round_idx],
+                            step_idx=step_idx,
+                            teacher_out=teacher_traj[round_idx][start:end]
+                        )
+                    # stu_out[:, 3:12, :, :] = stu_out[:, 3:12, :, :].detach()
+                    latents[round_idx] = stu_out
                     training_stats.report('Loss/loss', loss)
                     if not (loss_fn.afs and step_idx == 0):
                         loss.sum().mul(1 / batch_gpu_total).backward()
@@ -287,27 +312,21 @@ def training_loop(
                 loss_mean, loss_std = loss_norm.mean().item(), loss_norm.std().item()
             dist.print0("Step: {} | Loss-mean: {:12.8f} | loss-std: {:12.8f}".format(step_idx, loss_mean, loss_std))
 
-            # Update weights.
             if not (loss_fn.afs and step_idx == 0):
                 for param in net.parameters():
                     if param.grad is not None:
                         torch.nan_to_num(param.grad, nan=0, posinf=1e5, neginf=-1e5, out=param.grad)
                 optimizer.step()
 
-        # Learning rate scheduler
-        cur_kimg = cur_nimg / 1000
-        if cur_kimg >= 0.5 * total_kimg:
+        if cur_nimg / 1000 >= 0.5 * total_kimg:
             for g in optimizer.param_groups:
                 g['lr'] = optimizer_kwargs['lr'] / 10
 
-        # Perform maintenance tasks once per tick.
         cur_nimg += batch_size * num_acc_rounds
         done = (cur_nimg >= total_kimg * 1000)
-
         if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * 1000):
             continue
 
-        # Print status line, accumulating the same information in training_stats.
         tick_end_time = time.time()
         fields = []
         fields += [f"tick {training_stats.report0('Progress/tick', cur_tick):<5d}"]
@@ -335,7 +354,7 @@ def training_loop(
                     value = copy.deepcopy(value).eval().requires_grad_(False)
                     misc.check_ddp_consistency(value)
                     data[key] = value.cpu()
-                del value # conserve memory
+                del value
             if dist.get_rank() == 0:
                 with open(os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl'), 'wb') as f:
                     pickle.dump(data, f)
@@ -346,16 +365,18 @@ def training_loop(
             # torch.save(dict(net=net, optimizer_state=optimizer.state_dict()), os.path.join(run_dir, f'training-state-{cur_nimg//1000:06d}.pt'))
             # torch.save(dict(net=net), os.path.join(run_dir, f'training-state-{cur_nimg//1000:06d}.pt'))
 
-        # Update logs.
         training_stats.default_collector.update()
         if dist.get_rank() == 0:
             if stats_jsonl is None:
                 stats_jsonl = open(os.path.join(run_dir, 'stats.jsonl'), 'at')
             stats_jsonl.write(json.dumps(dict(training_stats.default_collector.as_dict(), timestamp=time.time())) + '\n')
             stats_jsonl.flush()
+            # global_step = cur_nimg // 1000
+            # for key, value in training_stats.items():
+            #     if isinstance(value, (int, float)):
+            #         writer.add_scalar(key, value, global_step)
         dist.update_progress(cur_nimg // 1000, total_kimg)
 
-        # Update state.
         cur_tick += 1
         tick_start_nimg = cur_nimg
         tick_start_time = time.time()
@@ -363,6 +384,5 @@ def training_loop(
         if done:
             break
 
-    # Done.
     dist.print0()
     dist.print0('Exiting...')

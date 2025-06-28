@@ -262,6 +262,7 @@ class SongUNet(torch.nn.Module):
         encoder_type        = 'standard',   # Encoder architecture: 'standard' for DDPM++, 'residual' for NCSN++.
         decoder_type        = 'standard',   # Decoder architecture: 'standard' for both DDPM++ and NCSN++.
         resample_filter     = [1,1],        # Resampling filter: [1,1] for DDPM++, [1,3,3,1] for NCSN++.
+        repeat              = 1
     ):
         assert embedding_type in ['fourier', 'positional']
         assert encoder_type in ['standard', 'skip', 'residual']
@@ -269,6 +270,7 @@ class SongUNet(torch.nn.Module):
 
         super().__init__()
         self.label_dropout = label_dropout
+        self.repeat = repeat
         emb_channels = model_channels * channel_mult_emb
         noise_channels = model_channels * channel_mult_noise
         init = dict(init_mode='xavier_uniform')
@@ -331,10 +333,19 @@ class SongUNet(torch.nn.Module):
                 attn = (idx == num_blocks and res in attn_resolutions)
                 self.dec[f'{res}x{res}_block{idx}'] = UNetBlock(in_channels=cin, out_channels=cout, attention=attn, **block_kwargs)
             if decoder_type == 'skip' or level == 0:
-                if decoder_type == 'skip' and level < len(channel_mult) - 1:
-                    self.dec[f'{res}x{res}_aux_up'] = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=0, up=True, resample_filter=resample_filter)
-                self.dec[f'{res}x{res}_aux_norm'] = GroupNorm(num_channels=cout, eps=1e-6)
-                self.dec[f'{res}x{res}_aux_conv'] = Conv2d(in_channels=cout, out_channels=out_channels, kernel=3, **init_zero)
+                if level == 0:
+                    if decoder_type == 'skip':
+                        print("i should be running, this is concerning")
+                        self.dec[f'{res}x{res}_aux_up'] = Conv2d(in_channels=out_channels*repeat, out_channels=out_channels*repeat, kernel=0, up=True, resample_filter=resample_filter)
+                    self.dec[f'{res}x{res}_aux_norm'] = GroupNorm(num_channels=cout, eps=1e-6)
+                    self.dec[f'{res}x{res}_aux_conv'] = Conv2d(in_channels=cout, out_channels=out_channels*repeat, kernel=3, **init_zero)
+                    self.last_layer = f'model.dec.{res}x{res}_aux_conv'
+                    # self.last_layer = f'dec.{res}x{res}_aux_conv'
+                else:
+                    if decoder_type == 'skip' and level < len(channel_mult) - 1:
+                        self.dec[f'{res}x{res}_aux_up'] = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=0, up=True, resample_filter=resample_filter)
+                    self.dec[f'{res}x{res}_aux_norm'] = GroupNorm(num_channels=cout, eps=1e-6)
+                    self.dec[f'{res}x{res}_aux_conv'] = Conv2d(in_channels=cout, out_channels=out_channels, kernel=3, **init_zero)
 
     def forward(self, x, noise_labels, class_labels, augment_labels=None, skip_tuning=False, step_condition=None):
         # Mapping.
@@ -376,7 +387,7 @@ class SongUNet(torch.nn.Module):
         tmp = None
         if skip_tuning:
             count = 0
-            coeff_min = 0.75
+            coeff_min = 0.75j
             coeff_max = 1
             interval = (coeff_max - coeff_min) / len(skips)
         for name, block in self.dec.items():
@@ -396,8 +407,34 @@ class SongUNet(torch.nn.Module):
                     else:
                         x = torch.cat([x, skips.pop()], dim=1)
                 x = block(x, emb, emb_step)
-        return aux
 
+        # CHANNEL_AXIS = 1
+        # if self.repeat > 1:
+        #     aux = torch.split(aux, aux.shape[CHANNEL_AXIS], CHANNEL_AXIS)
+        
+        return aux
+    
+    # def modify_dict(self, old_dict):
+    #     """
+    #     Return a new state‐dict where every key starting with "model."
+    #     has that prefix removed.
+    #     """
+    #     new_dict = {}
+    #     for key, value in old_dict.items():
+    #         if key.startswith("model."):
+    #             new_key = key[len("model."):]
+    #         else:
+    #             new_key = key
+    #         new_dict[new_key] = value
+    #     return new_dict
+
+
+
+
+import hashlib
+
+def _tensor_hash(tensor):
+    return hashlib.md5(tensor.detach().cpu().numpy().tobytes()).hexdigest()
 #----------------------------------------------------------------------------
 # Reimplementation of the ADM architecture from the paper
 # "Diffusion Models Beat GANS on Image Synthesis". Equivalent to the
@@ -420,6 +457,7 @@ class DhariwalUNet(torch.nn.Module):
         attn_resolutions    = [32,16,8],    # List of resolutions with self-attention.
         dropout             = 0.10,         # List of resolutions with self-attention.
         label_dropout       = 0,            # Dropout probability of class labels for classifier-free guidance.
+        repeat              = 1,
     ):
         super().__init__()
         self.label_dropout = label_dropout
@@ -534,6 +572,7 @@ class EDMPrecond(torch.nn.Module):
         sigma_max       = 80.0,             # Maximum supported noise level.
         sigma_data      = 0.5,              # Expected standard deviation of the training data.
         model_type      = 'DhariwalUNet',   # Class name of the underlying model.
+        repeat = 1,                         # Number of branches
         **model_kwargs,                     # Keyword arguments for the underlying model.
     ):
         super().__init__()
@@ -544,7 +583,8 @@ class EDMPrecond(torch.nn.Module):
         self.sigma_min = sigma_min
         self.sigma_max = sigma_max
         self.sigma_data = sigma_data
-        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, **model_kwargs)
+        self.repeat = repeat
+        self.model = globals()[model_type](img_resolution=img_resolution, in_channels=img_channels, out_channels=img_channels, label_dim=label_dim, repeat=repeat, **model_kwargs)
 
     def forward(self, x, sigma, class_labels=None, force_fp32=False, step_condition=None, **model_kwargs):
         dtype = torch.float16 if (self.use_fp16 and not force_fp32 and x.device.type == 'cuda') else torch.float32
@@ -562,11 +602,46 @@ class EDMPrecond(torch.nn.Module):
 
         F_x = self.model(c_in * x, c_noise.flatten(), class_labels=class_labels, step_condition=step_condition, **model_kwargs)
         assert F_x.dtype == dtype
-        D_x = c_skip * x + c_out * F_x
+        D_x = c_skip * x.repeat(1, self.model.repeat, 1, 1) + c_out * F_x
+        # print("teacher",D_x.shape)
         return D_x
 
     def round_sigma(self, sigma):
         return torch.as_tensor(sigma)
+
+    def load_state_dict(self, state_dict, *args, **kwargs):
+
+        # print("only in original:")
+        # print(set(state_dict.keys())-set(self.state_dict().keys()))
+
+        # print("only in loading file:")
+        # print(set(self.state_dict().keys())-set(state_dict.keys()))
+
+        # print("in both:")
+        # print(set(self.state_dict().keys()).intersection(set(state_dict.keys())))
+
+        if self.repeat == 1:
+            return super().load_state_dict(state_dict, *args, **kwargs)
+        
+        modified_state_dict = {}
+        print(self.model.last_layer,"LASTLASYER")
+        for key, value in state_dict.items():
+            if key.startswith(self.model.last_layer):
+                print("calling tilingg")
+                modified_state_dict[key] = self._tile_weight_for_repeat(key, value)
+            else:
+                modified_state_dict[key] = value
+        
+        return super().load_state_dict(modified_state_dict, *args, **kwargs)
+    
+    def _tile_weight_for_repeat(self, key, tensor):
+        if 'bias' in key:
+            return tensor.repeat(self.repeat)
+        elif 'weight' in key:
+            return tensor.clone().repeat(self.repeat, 1, 1, 1)
+        else:
+            print("panik")
+        return tensor
 
 #----------------------------------------------------------------------------
 

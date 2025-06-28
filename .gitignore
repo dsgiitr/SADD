@@ -4,5 +4,8 @@ src/
 samples/
 test/
 *.ckpt
+*.pkl
 *.py[cod]
 .DS_Store
+*.png
+exps/

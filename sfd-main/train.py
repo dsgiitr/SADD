@@ -7,6 +7,9 @@ import dnnlib
 from torch_utils import distributed as dist
 from training import training_loop
 
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter()
+
 import warnings
 warnings.filterwarnings('ignore', 'Grad strides do not match bucket view strides') # False warning printed by PyTorch 1.12.
 
@@ -55,6 +58,9 @@ warnings.filterwarnings('ignore', 'Grad strides do not match bucket view strides
 @click.option('--seed',             help='Random seed  [default: random]', metavar='INT',              type=int)
 @click.option('-n', '--dry-run',    help='Print training options and exit',                            is_flag=True)
 
+# Our hyperparam
+@click.option('--use_repeats',            help='To predict teacher internal step or not', metavar='BOOL',                  type=bool, default=True, show_default=True)
+
 def main(**kwargs):
     opts = dnnlib.EasyDict(kwargs)
     torch.multiprocessing.set_start_method('spawn')
@@ -69,7 +75,7 @@ def main(**kwargs):
                          M=opts.m, schedule_type=opts.schedule_type, schedule_rho=opts.schedule_rho, \
                          afs=opts.afs, max_order=opts.max_order, predict_x0=opts.predict_x0, \
                          lower_order_final=opts.lower_order_final, use_step_condition=opts.use_step_condition, \
-                         is_second_stage=opts.is_second_stage)
+                         is_second_stage=opts.is_second_stage,use_repeats=opts.use_repeats)
 
     # Training options.
     c.total_kimg = opts.total_kimg      # Train for total_kimg k trajectories

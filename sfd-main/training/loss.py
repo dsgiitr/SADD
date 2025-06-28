@@ -10,6 +10,7 @@ from piq import LPIPS
 def get_solver_fn(solver_name):
     if solver_name == 'euler':
         solver_fn = solvers.euler_sampler
+        # solver_fn = solvers.euler_sampler_multistep
     elif solver_name == 'heun':
         solver_fn = solvers.heun_sampler
     elif solver_name == 'dpm':
@@ -30,7 +31,7 @@ class loss:
         self, num_steps=None, sampler_tea=None, M=None,
         schedule_type=None, schedule_rho=None, afs=False, max_order=None, 
         sigma_min=None, sigma_max=None, predict_x0=True, lower_order_final=True, 
-        use_step_condition=False, model_source=None, is_second_stage=False,
+        use_step_condition=False, model_source=None, is_second_stage=False,use_repeats=True
     ):
         self.num_steps = num_steps
         self.solver_stu = get_solver_fn('euler')
@@ -53,6 +54,7 @@ class loss:
         self.t_steps = None             # baseline time schedule for student
 
         self.lpips = None
+        self.use_repeats=use_repeats
 
     def __call__(self, net, tensor_in, labels=None, step_idx=None, teacher_out=None, condition=None, unconditional_condition=None):
         step_idx = torch.tensor([step_idx]).reshape(1,)
@@ -60,34 +62,40 @@ class loss:
         t_next = self.t_steps[step_idx+1].to(tensor_in.device)
 
         # Student steps.
-        student_out, _, _ = self.solver_stu(
+        student_out = self.solver_stu(
             net, 
             tensor_in / t_cur, 
             class_labels=labels, 
             condition=condition, 
             unconditional_condition=unconditional_condition,
             randn_like=torch.randn_like, 
-            num_steps=2,
+            num_steps=self.M+2 if self.use_repeats else 2,
             sigma_min=t_next, 
             sigma_max=t_cur, 
             schedule_type=self.schedule_type, 
             schedule_rho=self.schedule_rho, 
             afs=self.afs, 
             denoise_to_zero=False, 
-            return_inters=False, 
+            return_inters=True, 
             step_idx=step_idx, 
             predict_x0=self.predict_x0, 
             lower_order_final=self.lower_order_final, 
             max_order=self.max_order, 
             train=True,
             step_condition=self.num_steps if self.use_step_condition else None,
+            num_future_steps=self.M + 1,  # New parameter for multi-step prediction
+            use_repeats=self.use_repeats,
         )
 
-        loss = (student_out - teacher_out).abs()
+        if self.use_repeats:
+            loss = (student_out[-1] - teacher_out[-1]).abs()  #Note:model can prioritize any one loss over the other 
+        else:
+            loss = (student_out[-1] - teacher_out[-1]).abs()
+
         if self.is_second_stage and self.model_source == 'edm' and step_idx == self.num_steps - 2: # the last step
             loss += self.get_lpips_measure(student_out, teacher_out).mean()
-        
-        return loss, student_out.detach()
+        student_out.detach()
+        return loss, student_out[-1].detach()
     
     def get_teacher_traj(self, net, tensor_in, labels=None, condition=None, unconditional_condition=None):
         if self.t_steps is None:
@@ -101,7 +109,7 @@ class loss:
             self.schedule_type = net.training_kwargs['schedule_type']
             self.schedule_rho = net.training_kwargs['schedule_rho']
 
-        # Teacher steps.
+
         teacher_traj = self.solver_tea(
             net, 
             tensor_in / self.t_steps[0], 
@@ -125,7 +133,7 @@ class loss:
             step_condition=None if not self.is_second_stage else (self.num_steps_teacher if self.use_step_condition else None), 
         )
 
-        return teacher_traj[self.tea_slice]
+        return teacher_traj
     
     def get_lpips_measure(self, img_batch1, img_batch2):
         if self.lpips is None:

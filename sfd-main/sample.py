@@ -135,6 +135,13 @@ def main(seeds, grid, outdir, subdirs, device=torch.device('cuda'), **solver_kwa
     step_condition = solver_kwargs['num_steps'] if solver_kwargs['use_step_condition'] else None
 
     nfe = solver_kwargs['num_steps'] - 2 if solver_kwargs["afs"] else solver_kwargs['num_steps'] - 1
+    # Added for repeats part
+    solver_kwargs["use_repeats"]=training_kwargs['use_repeats']
+    if training_kwargs['use_repeats']:
+        solver_kwargs['num_steps'] = training_kwargs['M'] * (solver_kwargs['num_steps'] - 1) + solver_kwargs['num_steps']
+    solver_kwargs['num_future_steps'] = training_kwargs['M'] + 1
+    
+
     nfe = 2 * nfe if dataset_name in ['ms_coco'] else nfe # should double NFE due to the classifier-free-guidance
     solver_kwargs['nfe'] = nfe
 
@@ -194,6 +201,8 @@ def main(seeds, grid, outdir, subdirs, device=torch.device('cuda'), **solver_kwa
                 images = sampler_fn(net, latents, step_condition=step_condition, skip_tuning=False, class_labels=class_labels, condition=None, unconditional_condition=None, randn_like=rnd.randn_like, **solver_kwargs)
 
         # Save images.
+        if images is None:
+            print("IIIIIII")
         if grid:
             images = torch.clamp(images / 2 + 0.5, 0, 1)
             os.makedirs(outdir, exist_ok=True)

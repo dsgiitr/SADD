@@ -15,8 +15,6 @@ def get_denoised(net, x, t, class_labels=None, condition=None, unconditional_con
         denoised = net(x, t, class_labels=class_labels, step_condition=step_condition)
     return denoised
 
-#----------------------------------------------------------------------------
-
 def euler_sampler(
     net, 
     latents, 
@@ -37,6 +35,9 @@ def euler_sampler(
     step_idx=None,
     step_condition=None,
     t_steps=None,
+    use_repeats=True,
+    num_future_steps=None,  # New parameter for multi-step prediction
+
     **kwargs
 ):  
     """
@@ -69,27 +70,70 @@ def euler_sampler(
         # Time step discretization.
         t_steps = get_schedule(num_steps, sigma_min, sigma_max, device=latents.device, schedule_type=schedule_type, schedule_rho=schedule_rho, net=net)
 
+
     # Main sampling loop.
     x_next = latents * t_steps[0]
     inters = [x_next.unsqueeze(0)]
     inters_eps = []
-    for i, (t_cur, t_next) in enumerate(zip(t_steps[:-1], t_steps[1:])):   # 0, ..., N-1
-        x_cur = x_next
 
-        # Euler step.
-        use_afs = afs and (((not train) and i == 0) or (train and step_idx == 0))
-        if use_afs:
-            d_cur = x_cur / ((1 + t_cur**2).sqrt())
-        else:
-            denoised = get_denoised(net, x_cur, t_cur, class_labels=class_labels, condition=condition, 
-                                    unconditional_condition=unconditional_condition, step_condition=step_condition)
-            d_cur = (x_cur - denoised) / t_cur
-        x_next = x_cur + (t_next - t_cur) * d_cur
+    if use_repeats:
+        for start in range(0,num_steps-1,num_future_steps):
+            end = min(start + num_future_steps+1,num_steps)
+            t_steps_chunk = t_steps[start:end]
         
-        if return_inters:
-            inters.append(x_next.unsqueeze(0))
-        if return_eps:
-            inters_eps.append(d_cur.unsqueeze(0))
+
+            x_cur = x_next
+            t_cur = t_steps_chunk[0]
+            # Multi-step prediction
+            denoised_multistep = get_denoised(
+                net, x_cur, t_cur, 
+                class_labels=class_labels, 
+                condition=condition, 
+                unconditional_condition=unconditional_condition, 
+                step_condition=step_condition,
+                # num_future_steps=num_future_steps
+            )  # Shape: [B, num_future_steps*C, H, W]
+
+            img_channels = getattr(net, 'module', net).img_channels
+            img_resolution = getattr(net, 'module', net).img_resolution
+
+            denoised_multistep = denoised_multistep.view(-1, num_future_steps, img_channels, img_resolution, img_resolution)
+
+            # Apply Euler steps for each predicted step
+            x_current = x_cur
+
+            t_current = t_cur
+            for step_offset in range(num_future_steps):
+                t_next = t_steps_chunk[step_offset+1]
+
+                # Use the corresponding prediction for this step
+                denoised_current = denoised_multistep[:, step_offset]  # [B, C, H, W]
+                d_cur = (x_current - denoised_current) / t_current
+                x_next = x_current + (t_next - t_current) * d_cur
+                
+                if return_inters:
+                    inters.append(x_next.unsqueeze(0))
+                if return_eps:
+                    inters_eps.append(d_cur.unsqueeze(0))
+    else:
+        for i, (t_cur, t_next) in enumerate(zip(t_steps[:-1], t_steps[1:])):   # 0, ..., N-1
+            x_cur = x_next
+
+            # Euler step.
+            use_afs = afs and (((not train) and i == 0) or (train and step_idx == 0))
+            if use_afs:
+                d_cur = x_cur / ((1 + t_cur**2).sqrt())
+            else:
+                denoised = get_denoised(net, x_cur, t_cur, class_labels=class_labels, condition=condition, 
+                                        unconditional_condition=unconditional_condition, step_condition=step_condition)
+
+                d_cur = (x_cur - denoised) / t_cur
+            x_next = x_cur + (t_next - t_cur) * d_cur
+            
+            if return_inters:
+                inters.append(x_next.unsqueeze(0))
+            if return_eps:
+                inters_eps.append(d_cur.unsqueeze(0))
 
     if denoise_to_zero:
         x_next = get_denoised(net, x_next, t_next, class_labels=class_labels, condition=condition, unconditional_condition=unconditional_condition)
@@ -429,7 +473,7 @@ def dpm_pp_sampler(
     assert max_order >= 1 and max_order <= 3
     # Time step discretization.
     t_steps = get_schedule(num_steps, sigma_min, sigma_max, device=latents.device, schedule_type=schedule_type, schedule_rho=schedule_rho, net=net)
-
+    # print("tsteps in teacher" , t_steps)
     # Main sampling loop.
     x_next = latents * t_steps[0]
     inters = [x_next.unsqueeze(0)]
@@ -445,6 +489,7 @@ def dpm_pp_sampler(
         else:
             denoised = get_denoised(net, x_cur, t_cur, class_labels=class_labels, condition=condition, 
                                     unconditional_condition=unconditional_condition)
+            # print("denoised",denoised.shape)
             d_cur = (x_cur - denoised) / t_cur
         
         buffer_model.append(dynamic_thresholding_fn(denoised)) if predict_x0 else buffer_model.append(d_cur)

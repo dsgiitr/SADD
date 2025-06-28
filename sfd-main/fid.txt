@@ -1,0 +1,3 @@
+cifar10 euler_step4_nfe3 416.8038136134451
+cifar10 euler_step13_nfe3 93.54541682948273
+cifar10 euler_step4_nfe3 93.55032963878318
