@@ -41,3 +41,8 @@ git status
 git commit -m "nothing major"
 git staurs
 git status
+git add .
+git commit -m "nothing major"
+git pull origin main
+git push origin main
+git status
