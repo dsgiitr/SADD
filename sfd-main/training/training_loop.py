@@ -44,7 +44,6 @@ def load_ldm_model(config, ckpt, verbose=False):
 #----------------------------------------------------------------------------
 
 def create_model(dataset_name=None, model_path=None, guidance_type=None, guidance_rate=None, device=None, is_second_stage=False):
-    net_student = None
     if is_second_stage: # for second-stage distillation
         assert model_path is not None
         dist.print0(f'Loading the second-stage teacher model from "{model_path}"...')
@@ -79,17 +78,7 @@ def create_model(dataset_name=None, model_path=None, guidance_type=None, guidanc
         net = dnnlib.util.construct_class_by_name(**network_kwargs, **interface_kwargs) # subclass of torch.nn.Module
         net.to(device)
         net.load_state_dict(net_temp.state_dict(), strict=False)
-        # network_kwargs_student=
-
-
-
-        network_kwargs.update(repeat=4)
-        net_student = dnnlib.util.construct_class_by_name(**network_kwargs, **interface_kwargs)
-        net_student.to(device)
-        net_student.model.load_state_dict_(net_temp.state_dict(), strict=False)
-
         del net_temp
-
         net.sigma_min = 0.006
         net.sigma_max = 80.0
         model_source = 'edm'
@@ -118,7 +107,7 @@ def create_model(dataset_name=None, model_path=None, guidance_type=None, guidanc
     else:
         raise ValueError(f"Unsupported dataset_name: {dataset_name}")
     
-    return net, net_student, model_source
+    return net, model_source
 
 #----------------------------------------------------------------------------
 # Check model structure
@@ -191,21 +180,11 @@ def training_loop(
     if dist.get_rank() != 0:
         torch.distributed.barrier()         # rank 0 goes first
 
-    net_copy, net, model_source = create_model(dataset_name, model_path, guidance_type, guidance_rate, device, is_second_stage)
-    for name, param in net.model.named_parameters():
-        last_param = param
-
-    print(last_param.shape)
-    print("teacher now")
-    for name, param in net_copy.model.named_parameters():
-        last_param = param
-    print(last_param.shape)
-
+    net, model_source = create_model(dataset_name, model_path, guidance_type, guidance_rate, device, is_second_stage)
     if dataset_name in ['ms_coco']:
         net.guidance_rate = 1.0             # training with guidance_rate=1.0, sampling with specified guidance_rate
     net.use_fp16 = True                     # use half precision to accelerate training
-    # net_copy = copy.deepcopy(net).eval()    # to be the teacher
-    net_copy.eval().requires_grad_(False)  # to be the teacher, no gradient
+    net_copy = copy.deepcopy(net).eval()    # to be the teacher
     net.train().requires_grad_(True)
 
     if dist.get_rank() == 0:
@@ -286,28 +265,8 @@ def training_loop(
             else:
                 teacher_traj = [loss_fn.get_teacher_traj(net=net_copy, tensor_in=latents[k], labels=labels[k]) for k in range(num_acc_rounds)]
 
-        # print("======Printing Teacher traj shape====")
-        # print("num_acc_rounds",num_acc_rounds)   #1
-        # print(len(teacher_traj))    #1
-        # print(teacher_traj[0].shape) #
-        # print("======Printed Teacher traj shape======")
-
-        # ====Printng tsteps shape=======
-        # torch.Size([13])
-        # ====Printed=======
-        # Teacher trajectory length: 13
-        # Teacher trajectory shape: inside get teacher torch.Size([13, 128, 3, 32, 32])
-        # ======Printing Teacher traj shape====
-        # num_acc_rounds 1
-        # 1
-        # torch.Size([13, 128, 3, 32, 32])
-        # ======Printed Teacher traj shape======
-
         # Perform training step by step
         for step_idx in range(loss_fn.num_steps - 1):
-            start = step_idx * (loss_fn.M + 1) + 1  
-            end = start + (loss_fn.M + 1) 
-
             optimizer.zero_grad(set_to_none=True)
             
             # Calculate loss
@@ -315,11 +274,9 @@ def training_loop(
                 with misc.ddp_sync(ddp, (round_idx == num_acc_rounds - 1)):
                     if guidance_type in ['uncond', 'cfg']:      # LDM and SD models
                         with autocast("cuda"):
-                            # loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx], condition=c[round_idx], unconditional_condition=uc)
-                            loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][start:end], condition=c[round_idx], unconditional_condition=uc)
+                            loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx], condition=c[round_idx], unconditional_condition=uc)
                     else:
-                        # loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx])                        
-                        loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][start:end])                        
+                        loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx])                        
                     latents[round_idx] = stu_out                # start point in next loop
                     training_stats.report('Loss/loss', loss)
                     if not (loss_fn.afs and step_idx == 0):
@@ -409,58 +366,3 @@ def training_loop(
     # Done.
     dist.print0()
     dist.print0('Exiting...')
-
-
-
-
-
-
-
-
-
-
-
-# ====Printng tsteps shape=======
-# torch.Size([13])
-# ====Printed=======
-# Teacher trajectory length: 13
-# Teacher trajectory shape: inside get teacher torch.Size([13, 128, 3, 32, 32])
-# ======Printing Teacher traj shape====
-# num_acc_rounds 1
-# 1
-# torch.Size([13, 128, 3, 32, 32])
-# ======Printed Teacher traj shape======
-# Student tsteps length: 5
-# Start student sampling with step_idx:  tensor([0])
-# Student tsteps: tensor([80.0000, 51.1571, 31.7298, 19.0034, 10.9293], device='cuda:0')
-# Student start index: tensor([0])
-# for now denoised is of shape [B, C, H, W] we will copy it to [B, num_future_steps, C, H, W]
-# torch.Size([128, 3, 32, 32])   shape for denoised_multistep
-# torch.Size([128, 4, 3, 32, 32])   shape for denoised_multistep after repeat
-# Student trajectory shape: torch.Size([4, 128, 3, 32, 32])
-# teacher_out shape: in student loss  torch.Size([4, 128, 3, 32, 32])
-# Step: 0 | Loss-mean: 2266.98193359 | loss-std: 1481.54138184
-# Student tsteps length: 5
-# Start student sampling with step_idx:  tensor([1])
-# Student tsteps: tensor([10.9293,  5.9941,  3.1071,  1.5045,  0.6699], device='cuda:0')
-# Student start index: tensor([4])
-# for now denoised is of shape [B, C, H, W] we will copy it to [B, num_future_steps, C, H, W]
-# torch.Size([128, 3, 32, 32])   shape for denoised_multistep
-# torch.Size([128, 4, 3, 32, 32])   shape for denoised_multistep after repeat
-# Student trajectory shape: torch.Size([4, 128, 3, 32, 32])
-# teacher_out shape: in student loss  torch.Size([4, 128, 3, 32, 32])
-# Step: 1 | Loss-mean: 264.17401123 | loss-std: 132.10939026
-# Student tsteps length: 5
-# Start student sampling with step_idx:  tensor([2])
-# Student tsteps: tensor([0.6699, 0.2683, 0.0936, 0.0271, 0.0060], device='cuda:0')
-# Student start index: tensor([8])
-# for now denoised is of shape [B, C, H, W] we will copy it to [B, num_future_steps, C, H, W]
-# torch.Size([128, 3, 32, 32])   shape for denoised_multistep
-# torch.Size([128, 4, 3, 32, 32])   shape for denoised_multistep after repeat
-# Student trajectory shape: torch.Size([4, 128, 3, 32, 32])
-# teacher_out shape: in student loss  torch.Size([4, 128, 3, 32, 32])
-# Step: 2 | Loss-mean:  57.29330444 | loss-std:   2.95622993
-# tick 0     kimg 0.1       time 11s          sec/tick 8.9     sec/kimg 69.89   maintenance 2.5    gpumem 16.10  reserved 17.28 
-# ====Printng tsteps shape=======
-# torch.Size([13])
-# ====Printed=======
