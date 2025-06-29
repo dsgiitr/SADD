@@ -88,14 +88,20 @@ class loss:
         )
 
         if self.use_repeats:
-            loss = (student_out[-1] - teacher_out[-1]).abs()  #Note:model can prioritize any one loss over the other 
+            # loss = (student_out[-1] - teacher_out[-1]).abs()  #Note:model can prioritize any one loss over the other 
+            loss = 0
+            for i in range(-4, 0):
+                weight = 1.0
+                loss += weight * (student_out[i] - teacher_out[i]).abs()
+            loss_clast = (student_out[-1] - teacher_out[-1]).abs()
+            
         else:
             loss = (student_out[-1] - teacher_out[-1]).abs()
 
         if self.is_second_stage and self.model_source == 'edm' and step_idx == self.num_steps - 2: # the last step
             loss += self.get_lpips_measure(student_out, teacher_out).mean()
         student_out.detach()
-        return loss, student_out[-1].detach()
+        return loss, student_out[-1].detach(), loss_clast
     
     def get_teacher_traj(self, net, tensor_in, labels=None, condition=None, unconditional_condition=None):
         if self.t_steps is None:

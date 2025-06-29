@@ -1,3 +1,6 @@
 cifar10 euler_step4_nfe3 416.8038136134451
 cifar10 euler_step13_nfe3 93.54541682948273
 cifar10 euler_step4_nfe3 93.55032963878318
+cifar10 euler_step13_nfe3 4.16739208968784 (0.1,0.1,0.1, 1.0 weightage to each output)
+cifar10 euler_step13_nfe3 4.167358152461862
+cifar10 euler_step13_nfe3 5.049536138217732 Equal weightage to each branch

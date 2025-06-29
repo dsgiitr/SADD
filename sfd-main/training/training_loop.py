@@ -205,7 +205,7 @@ def training_loop(
         net.guidance_rate = 1.0
     net.use_fp16 = True
     net_copy.eval().requires_grad_(False) # CP: Original code did not set requires_grad to False, but it is better to do so.
-    # net_copy.use_fp16 = True
+    net_copy.use_fp16 = True
     net.train().requires_grad_(True)
 
     if dist.get_rank() == 0:
@@ -292,16 +292,16 @@ def training_loop(
                     if guidance_type in ['uncond', 'cfg']:
                         with autocast("cuda"):
                             # loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx], condition=c[round_idx], unconditional_condition=uc)
-                            loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][start:end], condition=c[round_idx], unconditional_condition=uc)
+                            loss, stu_out, loss_clast = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][start:end], condition=c[round_idx], unconditional_condition=uc)
                     else:
-                        loss, stu_out = loss_fn(
+                        loss, stu_out, loss_clast = loss_fn(
                             net=ddp,
                             tensor_in=latents[round_idx],
                             labels=labels[round_idx],
                             step_idx=step_idx,
                             teacher_out=teacher_traj[round_idx][start:end]
                         )
-                    # stu_out[:, 3:12, :, :] = stu_out[:, 3:12, :, :].detach()
+
                     latents[round_idx] = stu_out
                     training_stats.report('Loss/loss', loss)
                     if not (loss_fn.afs and step_idx == 0):
@@ -310,7 +310,11 @@ def training_loop(
             with torch.no_grad():
                 loss_norm = torch.norm(loss, p=2, dim=(1,2,3))
                 loss_mean, loss_std = loss_norm.mean().item(), loss_norm.std().item()
+                loss_clast_norm = loss_clast.norm(p=2, dim=(1,2,3))
+                loss_clast_mean, loss_clast_std = loss_clast_norm.mean().item(), loss_clast_norm.std().item()
+
             dist.print0("Step: {} | Loss-mean: {:12.8f} | loss-std: {:12.8f}".format(step_idx, loss_mean, loss_std))
+            dist.print0("Step: {} | Loss-clast-mean: {:12.8f} | loss-clast-std: {:12.8f}".format(step_idx, loss_clast_mean, loss_clast_std))
 
             if not (loss_fn.afs and step_idx == 0):
                 for param in net.parameters():
