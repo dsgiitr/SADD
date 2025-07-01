@@ -517,6 +517,7 @@ class UNetModel(nn.Module):
         context_dim=None,                 # custom transformer support
         n_embed=None,                     # custom support for prediction of discrete ids into codebook of first stage vq model
         legacy=True,
+        repeat=1,
     ):
         super().__init__()
         if use_spatial_transformer:
@@ -553,6 +554,7 @@ class UNetModel(nn.Module):
         self.num_head_channels = num_head_channels
         self.num_heads_upsample = num_heads_upsample
         self.predict_codebook_ids = n_embed is not None
+        self.repeat = repeat
 
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
@@ -738,8 +740,9 @@ class UNetModel(nn.Module):
         self.out = nn.Sequential(
             normalization(ch),
             nn.SiLU(),
-            zero_module(conv_nd(dims, model_channels, out_channels, 3, padding=1)),
+            zero_module(conv_nd(dims, model_channels, out_channels * repeat, 3, padding=1)),
         )
+        self.last_layer = "out.2"
         
         if self.predict_codebook_ids:
             self.id_predictor = nn.Sequential(
@@ -803,7 +806,29 @@ class UNetModel(nn.Module):
         else:
             return self.out(h)
 
+    def load_state_dict(self, state_dict, *args, **kwargs):
+        if self.repeat == 1:
+            return super().load_state_dict(state_dict, *args, **kwargs)
+        
+        modified_state_dict = {}
+        for key, value in state_dict.items():
+            if key.startswith(self.last_layer):
+                print("calling tilingg")
+                modified_state_dict[key] = self._tile_weight_for_repeat(key, value)
+            else:
+                modified_state_dict[key] = value
+        
+        return super().load_state_dict(modified_state_dict, *args, **kwargs)
 
+    def _tile_weight_for_repeat(self, key, tensor):
+        if 'bias' in key:
+            return tensor.repeat(self.repeat)
+        elif 'weight' in key:
+            return tensor.clone().repeat(self.repeat, 1, 1, 1)
+        else:
+            print("panik")
+            raise Exception("panik")
+            
 class EncoderUNetModel(nn.Module):
     """
     The half UNet model with attention and timestep embedding.

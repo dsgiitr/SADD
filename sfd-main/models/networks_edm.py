@@ -335,8 +335,7 @@ class SongUNet(torch.nn.Module):
             if decoder_type == 'skip' or level == 0:
                 if level == 0:
                     if decoder_type == 'skip':
-                        print("i should be running, this is concerning")
-                        self.dec[f'{res}x{res}_aux_up'] = Conv2d(in_channels=out_channels*repeat, out_channels=out_channels*repeat, kernel=0, up=True, resample_filter=resample_filter)
+                        self.dec[f'{res}x{res}_aux_up'] = Conv2d(in_channels=out_channels, out_channels=out_channels, kernel=0, up=True, resample_filter=resample_filter)
                     self.dec[f'{res}x{res}_aux_norm'] = GroupNorm(num_channels=cout, eps=1e-6)
                     self.dec[f'{res}x{res}_aux_conv'] = Conv2d(in_channels=cout, out_channels=out_channels*repeat, kernel=3, **init_zero)
                     self.last_layer = f'model.dec.{res}x{res}_aux_conv'
@@ -508,7 +507,8 @@ class DhariwalUNet(torch.nn.Module):
                 cout = model_channels * mult
                 self.dec[f'{res}x{res}_block{idx}'] = UNetBlock(in_channels=cin, out_channels=cout, attention=(res in attn_resolutions), **block_kwargs)
         self.out_norm = GroupNorm(num_channels=cout)
-        self.out_conv = Conv2d(in_channels=cout, out_channels=out_channels, kernel=3, **init_zero)
+        self.out_conv = Conv2d(in_channels=cout, out_channels=out_channels*repeat, kernel=3, **init_zero)
+        self.last_layer = 'model.out_conv'
 
     def forward(self, x, noise_labels, class_labels, augment_labels=None, skip_tuning=False, step_condition=None):
         # Mapping.
@@ -670,7 +670,10 @@ class CFGPrecond(torch.nn.Module):
         self.model = model
         self.guidance_rate = guidance_rate
         self.guidance_type = guidance_type
-
+        self.alphas_cumprod = model.alphas_cumprod
+        self.get_learned_conditioning = model.get_learned_conditioning
+        self.apply_model = model.apply_model
+        
         alphas_cumprod = model.alphas_cumprod
         log_alphas = 0.5 * torch.log(alphas_cumprod)
         self.M = len(log_alphas)

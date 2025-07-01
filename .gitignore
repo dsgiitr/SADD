@@ -9,3 +9,5 @@ test/
 .DS_Store
 *.png
 exps/
+runs/
+*.zip

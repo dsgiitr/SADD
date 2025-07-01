@@ -23,16 +23,20 @@ from torch.utils.tensorboard import SummaryWriter
 # Load pre-trained models from the LDM codebase (https://github.com/CompVis/latent-diffusion) 
 # and Stable Diffusion codebase (https://github.com/CompVis/stable-diffusion)
 
-def load_ldm_model(config, ckpt, verbose=False):
+def load_ldm_model(config, ckpt, verbose=False, repeat=1):
     from models.ldm.util import instantiate_from_config
+    
     if ckpt.endswith("ckpt"):
-        pl_sd = torch.load(ckpt, map_location="cpu")
+        pl_sd = torch.load(ckpt, map_location="cpu", weights_only=False)
         if "global_step" in pl_sd:
             dist.print0(f"Global Step: {pl_sd['global_step']}")
         sd = pl_sd["state_dict"]
     else:
         raise NotImplementedError
+    
+    config.model.params.unet_config.repeat = repeat
     model = instantiate_from_config(config.model)
+    
     m, u = model.load_state_dict(sd, strict=False)
     if len(m) > 0 and verbose:
         print("missing keys:")
@@ -106,18 +110,33 @@ def create_model(dataset_name=None, model_path=None, guidance_type=None, guidanc
             net = load_ldm_model(config, model_path)
             net = CFGPrecond(net, img_resolution=64, img_channels=3, guidance_rate=1., guidance_type='uncond', label_dim=0).to(device)
             net.sigma_min = 0.006
+
+            net_student = load_ldm_model(config, model_path, repeat=num_repeats)
+            net = CFGPrecond(net_student, img_resolution=64, img_channels=3, guidance_rate=1., guidance_type='uncond', label_dim=0).to(device)
+            net_student.sigma_min = 0.006
+
         elif dataset_name in ['ffhq_ldm']:
             assert guidance_type == 'uncond'
             config = OmegaConf.load('./models/ldm/configs/latent-diffusion/ffhq-ldm-vq-4.yaml')
             net = load_ldm_model(config, model_path)
             net = CFGPrecond(net, img_resolution=64, img_channels=3, guidance_rate=1., guidance_type='uncond', label_dim=0).to(device)
             net.sigma_min = 0.006
+
+            net_student = load_ldm_model(config, model_path, repeat=num_repeats)
+            net_student = CFGPrecond(net, img_resolution=64, img_channels=3, guidance_rate=1., guidance_type='uncond', label_dim=0).to(device)
+            net_student.sigma_min = 0.006
+
         elif dataset_name in ['ms_coco']:
             assert guidance_type == 'cfg'
             config = OmegaConf.load('./models/ldm/configs/stable-diffusion/v1-inference.yaml')
             net = load_ldm_model(config, model_path)
             net = CFGPrecond(net, img_resolution=64, img_channels=4, guidance_rate=guidance_rate, guidance_type='classifier-free', label_dim=True).to(device)
             net.sigma_min = 0.1
+
+            net_student = load_ldm_model(config, model_path)
+            net_student = CFGPrecond(net, img_resolution=64, img_channels=4, guidance_rate=guidance_rate, guidance_type='classifier-free', label_dim=True).to(device)
+            net_student.sigma_min = 0.1
+
         model_source = 'ldm'
     else:
         raise ValueError(f"Unsupported dataset_name: {dataset_name}")
@@ -205,6 +224,8 @@ def training_loop(
         net.guidance_rate = 1.0
     net.use_fp16 = True
     net_copy.eval().requires_grad_(False) # CP: Original code did not set requires_grad to False, but it is better to do so.
+                                          # Shree: bro thats coz it was set inside model creation by default
+
     net_copy.use_fp16 = True
     net.train().requires_grad_(True)
 
@@ -375,10 +396,10 @@ def training_loop(
                 stats_jsonl = open(os.path.join(run_dir, 'stats.jsonl'), 'at')
             stats_jsonl.write(json.dumps(dict(training_stats.default_collector.as_dict(), timestamp=time.time())) + '\n')
             stats_jsonl.flush()
-            # global_step = cur_nimg // 1000
-            # for key, value in training_stats.items():
-            #     if isinstance(value, (int, float)):
-            #         writer.add_scalar(key, value, global_step)
+            global_step = cur_nimg // 1000
+            for key, value in training_stats.items():
+                if isinstance(value, (int, float)):
+                    writer.add_scalar(key, value, global_step)
         dist.update_progress(cur_nimg // 1000, total_kimg)
 
         cur_tick += 1

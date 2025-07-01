@@ -49,3 +49,16 @@ git status
 git add .
 git commit -m "removed reduntant code"
 git push origin main
+git filter-repo --invert-paths --path-glob '*.pkl' --force
+git push -u origin main
+git remote -v
+git remote add orgin https://github.com/dsgiitr/SADD.git
+git push -u origin main
+git remote add origin https://github.com/dsgiitr/SADD.git
+git push -u origin main
+ls -q
+ls -a
+git remote -v
+git remote remove orgin
+git remote -v
+git log --graph
