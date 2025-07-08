@@ -60,8 +60,12 @@ warnings.filterwarnings('ignore', 'Grad strides do not match bucket view strides
 
 # Our hyperparam
 @click.option('--use_repeats',            help='To predict teacher internal step or not', metavar='BOOL',                  type=bool, default=True, show_default=True)
+@click.option('--weight_ls', help='Comma-separated list for loss weights', type=str, default="1,1,1,1")
 
 def main(**kwargs):
+    if 'weight_ls' in kwargs:
+        kwargs['weight_ls'] = [float(x) for x in kwargs['weight_ls'].split(',')]
+    print(kwargs['weight_ls'])
     opts = dnnlib.EasyDict(kwargs)
     torch.multiprocessing.set_start_method('spawn')
     dist.init()
@@ -84,6 +88,7 @@ def main(**kwargs):
     c.state_dump_ticks = 99999999       # no dump
     c.update(dataset_name=opts.dataset_name, batch_size=opts.batch, batch_gpu=opts.batch_gpu, gpus=dist.get_world_size(), cudnn_benchmark=opts.bench)
     c.update(guidance_type=opts.guidance_type, guidance_rate=opts.guidance_rate)
+    c.weight_ls = opts.weight_ls
     
     # Random seed.
     if opts.seed is not None:

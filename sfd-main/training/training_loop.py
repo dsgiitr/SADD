@@ -17,6 +17,7 @@ from torch_utils import misc
 from solver_utils import get_schedule
 from models.ldm.util import instantiate_from_config
 from torch_utils.download_util import check_file_by_key
+import torchvision.utils as vutils
 
 from torch.utils.tensorboard import SummaryWriter
 #----------------------------------------------------------------------------
@@ -181,10 +182,12 @@ def training_loop(
     guidance_rate       = 0.,
     device              = torch.device('cuda'),
     is_second_stage     = False,
+    weight_ls = [1, 1, 1, 1], 
     **kwargs,
 ):
-    if dist.get_rank() == 0:
-        writer = SummaryWriter(run_dir, 'tensorboard_logs')
+    # writer = SummaryWriter('') if dist.get_rank() == 0 else None
+    writer = SummaryWriter(run_dir) if dist.get_rank() == 0 else None
+    print(run_dir)
 
     start_time = time.time()
     np.random.seed((seed * dist.get_world_size() + dist.get_rank()) % (1 << 31))
@@ -225,6 +228,7 @@ def training_loop(
     net.use_fp16 = True
     net_copy.eval().requires_grad_(False) # CP: Original code did not set requires_grad to False, but it is better to do so.
                                           # Shree: bro thats coz it was set inside model creation by default
+                                          # Tushar: Aapne banaya tha.?!
 
     net_copy.use_fp16 = True
     net.train().requires_grad_(True)
@@ -235,8 +239,6 @@ def training_loop(
     total_params_unet = sum(p.numel() for p in net.parameters())
     dist.print0("Total parameters in U-Net:     ", total_params_unet)
     
-    
-    # Setup optimizer.
 
     # Setup optimizer.
     dist.print0('Setting up optimizer...')
@@ -300,48 +302,136 @@ def training_loop(
                         teacher_traj = [loss_fn.get_teacher_traj(net=net_copy, tensor_in=latents[k], labels=labels[k], condition=c[k], unconditional_condition=uc) for k in range(num_acc_rounds)]
             else:
                 teacher_traj = [loss_fn.get_teacher_traj(net=net_copy, tensor_in=latents[k], labels=labels[k]) for k in range(num_acc_rounds)]
+                # print("Shape of the teacher trajectory:", teacher_traj[0].shape) # shape is (total_steps, batch_size, channels, height, width)
 
+        student_traj = []
         for step_idx in range(loss_fn.num_steps - 1):
+            # if step_idx in [1, 2]:
+            #     continue
             start = step_idx * (loss_fn.M + 1) + 1
             end = start + (loss_fn.M + 1)
 
             optimizer.zero_grad(set_to_none=True)
 
             # Calculate loss
+            # weight_ls = [0.1,0.1,0.1,1]
             for round_idx in range(num_acc_rounds):
                 with misc.ddp_sync(ddp, (round_idx == num_acc_rounds - 1)):
                     if guidance_type in ['uncond', 'cfg']:
                         with autocast("cuda"):
                             # loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx], condition=c[round_idx], unconditional_condition=uc)
-                            loss, stu_out, loss_clast = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][start:end], condition=c[round_idx], unconditional_condition=uc)
+                            loss, stu_out, loss_ls, stu_out_comp = loss_fn(
+                                net=ddp, 
+                                tensor_in=latents[round_idx], 
+                                labels=labels[round_idx], 
+                                step_idx=step_idx, 
+                                teacher_out=teacher_traj[round_idx][start:end], 
+                                condition=c[round_idx], 
+                                unconditional_condition=uc,
+                                weight_ls = weight_ls)
                     else:
-                        loss, stu_out, loss_clast = loss_fn(
+                        loss, stu_out, loss_ls, stu_out_comp = loss_fn(
                             net=ddp,
                             tensor_in=latents[round_idx],
                             labels=labels[round_idx],
                             step_idx=step_idx,
-                            teacher_out=teacher_traj[round_idx][start:end]
+                            teacher_out=teacher_traj[round_idx][start:end],
+                            weight_ls = weight_ls
+                    
                         )
-
+                    # print("Shape of stu_out_comp: ", stu_out_comp.shape)
+                    student_traj.append(stu_out_comp[:4,:,:,:])
                     latents[round_idx] = stu_out
                     training_stats.report('Loss/loss', loss)
+
+                    # writer.add_scalar('Loss/loss', loss.item(), cur_nimg // 1000)
+
                     if not (loss_fn.afs and step_idx == 0):
                         loss.sum().mul(1 / batch_gpu_total).backward()
             
-            with torch.no_grad():
+            with torch.no_grad():  
                 loss_norm = torch.norm(loss, p=2, dim=(1,2,3))
                 loss_mean, loss_std = loss_norm.mean().item(), loss_norm.std().item()
-                loss_clast_norm = loss_clast.norm(p=2, dim=(1,2,3))
-                loss_clast_mean, loss_clast_std = loss_clast_norm.mean().item(), loss_clast_norm.std().item()
-
             dist.print0("Step: {} | Loss-mean: {:12.8f} | loss-std: {:12.8f}".format(step_idx, loss_mean, loss_std))
-            dist.print0("Step: {} | Loss-clast-mean: {:12.8f} | loss-clast-std: {:12.8f}".format(step_idx, loss_clast_mean, loss_clast_std))
+            writer.add_scalar('Loss/loss_total', loss_mean, cur_nimg // 1000)
+            loss_ls_norm = []
+            for i in range(len(loss_ls)):
+                loss_ls_norm.append(loss_ls[i].norm(p=2, dim=(1,2,3)))
+                dist.print0("Step: {} | Loss_ls-{}-mean: {:12.8f} | loss_ls-{}-std: {:12.8f}".format(step_idx, i, loss_ls_norm[i].mean().item(), i, loss_ls_norm[i].std().item()))
+                writer.add_scalar(f'Loss/loss_ls_{i}', loss_ls_norm[i].mean().item(), cur_nimg // 1000)
 
             if not (loss_fn.afs and step_idx == 0):
                 for param in net.parameters():
                     if param.grad is not None:
                         torch.nan_to_num(param.grad, nan=0, posinf=1e5, neginf=-1e5, out=param.grad)
                 optimizer.step()
+
+        # if(cur_tick % 10 == 0):
+        #     for round_idx in range(num_acc_rounds):    
+        #         # generating the image at each step of the teacher trajectory first 8 images of batch
+        #         traj = teacher_traj[0][:,:8,:,:,:] 
+        #         # print("Shape of traj ", traj.shape)
+        #         total_steps, batch_size_temp = traj.shape[0], traj.shape[1]
+
+        #         all_images = traj.contiguous().view(total_steps * batch_size_temp, traj.shape[2], traj.shape[3], traj.shape[4])
+        #         if model_source == 'edm':
+        #             all_images = torch.clamp((all_images + 1) / 2, min=0, max=1)
+        #         elif model_source == 'ldm':
+        #             all_images = torch.clamp(all_images, min=0, max=1)
+
+        #         grid = vutils.make_grid(
+        #             all_images,
+        #             nrow=8,
+        #             normalize=False,
+        #             padding = 2,
+        #             pad_value=1.0
+        #         )
+        #         # size of the grid
+        #         # print("Shape of the grid: ", grid.shape)
+        #         vutils.save_image(grid, os.path.join(run_dir, f'teacher_traj_{cur_tick}.png'))
+        #         print(f"Saved teacher trajectory images to {os.path.join(run_dir, f'teacher_traj_{cur_tick}.png')}")
+        #         # Tensorboard on lightning is not displaying the images properly for some reason
+        #         if writer is not None:
+        #             writer.add_image(
+        #                 f'Some shit_{cur_tick}',
+        #                 grid,
+        #                 global_step=cur_nimg // 1000,
+        #             )
+        #             writer.flush()
+        #             print(f"Added teacher trajectory images to TensorBoard at step {cur_nimg // 1000}.")
+
+        #     all_student_images = []
+
+        #     for idx, traj_student in enumerate(student_traj):
+        #         traj_student = traj_student[:, :8, :, :, :]  # Shape: (total_steps, 8, channels, height, width)
+        #         # print(f"Shape of traj_student[{idx}]: ", traj_student.shape)
+
+        #         total_steps, batch_size_temp = traj_student.shape[0], traj_student.shape[1]
+        #         images_student = traj_student.contiguous().view(
+        #             total_steps * batch_size_temp, traj_student.shape[2], traj_student.shape[3], traj_student.shape[4]
+        #         )
+
+        #         # Normalize images for plotting
+        #         if model_source == 'edm':
+        #             images_student = torch.clamp((images_student + 1) / 2, min=0, max=1)
+        #         elif model_source == 'ldm':
+        #             images_student = torch.clamp(images_student, min=0, max=1)
+
+        #         all_student_images.append(images_student)
+
+        #     all_student_images = torch.cat(all_student_images, dim=0)
+
+        #     grid_all_students = vutils.make_grid(
+        #         all_student_images,
+        #         nrow=8,  
+        #         normalize=False,
+        #         padding=2,
+        #         pad_value=1.0
+        #     )
+
+        #     vutils.save_image(grid_all_students, os.path.join(run_dir, f'student_traj_combined_{cur_tick}.png'))
+        #     print(f"Saved combined student trajectory images to {os.path.join(run_dir, f'student_traj_combined_{cur_tick}.png')}")
+
 
         if cur_nimg / 1000 >= 0.5 * total_kimg:
             for g in optimizer.param_groups:
@@ -396,10 +486,10 @@ def training_loop(
                 stats_jsonl = open(os.path.join(run_dir, 'stats.jsonl'), 'at')
             stats_jsonl.write(json.dumps(dict(training_stats.default_collector.as_dict(), timestamp=time.time())) + '\n')
             stats_jsonl.flush()
-            global_step = cur_nimg // 1000
-            for key, value in training_stats.items():
-                if isinstance(value, (int, float)):
-                    writer.add_scalar(key, value, global_step)
+            # global_step = cur_nimg // 1000
+            # for key, value in training_stats.items():
+            #     if isinstance(value, (int, float)):
+            #         writer.add_scalar(key, value, global_step)
         dist.update_progress(cur_nimg // 1000, total_kimg)
 
         cur_tick += 1
@@ -411,3 +501,4 @@ def training_loop(
 
     dist.print0()
     dist.print0('Exiting...')
+    writer.close()
