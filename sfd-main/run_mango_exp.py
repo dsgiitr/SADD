@@ -6,26 +6,63 @@ from scipy.stats import uniform
 
 evaluation_records = []
 
-def find_min_s2_loss(log_path: str) -> float:
+# def find_min_s2_loss(log_path: str) -> float:
+#     """
+#     Parse the log file to extract the last loss values for steps 0, 1, 2
+#     and return their sum.
+#     """
+#     all_losses = [[] for _ in range(3)]
+#     pattern = re.compile(r"Step:\s*(\d+)\s*\|\s*Loss-mean:\s*([0-9]+\.[0-9]+)")
+#     with open(log_path, 'r') as f:
+#         for line in f:
+#             m = pattern.search(line)
+#             if m:
+#                 step = int(m.group(1))
+#                 loss = float(m.group(2))
+#                 if 0 <= step < 3:
+#                     all_losses[step].append(loss)
+#     step_2_losses=all_losses[-1]
+#     # print(min(step_2_loss[-400:]))
+
+#     return min(step_2_losses)
+
+
+def find_min_s2_loss_ls3(log_path: str) -> float:
     """
-    Parse the log file to extract the last loss values for steps 0, 1, 2
-    and return their sum.
+    Parse the log file to extract all Step 2 Loss_ls-3-mean values
+    and return their minimum.
     """
-    all_losses = [[] for _ in range(3)]
-    pattern = re.compile(r"Step:\s*(\d+)\s*\|\s*Loss-mean:\s*([0-9]+\.[0-9]+)")
+    
+    step2_ls3_losses = []
+    
+    # Pattern to match Step 2 Loss_ls-3-mean lines
+    step2_ls3_pattern = re.compile(r"Step:\s*2\s*\|\s*Loss_ls-3-mean:\s*([0-9]+\.[0-9]+)")
+    
     with open(log_path, 'r') as f:
         for line in f:
-            m = pattern.search(line)
-            if m:
-                step = int(m.group(1))
-                loss = float(m.group(2))
-                if 0 <= step < 3:
-                    all_losses[step].append(loss)
-    step_2_losses=all_losses[-1]
-    # print(min(step_2_loss[-400:]))
+            match = step2_ls3_pattern.search(line)
+            if match:
+                loss_value = float(match.group(1))
+                step2_ls3_losses.append(loss_value)
+                # print(f"Found Step 2 Loss_ls-3-mean: {loss_value}")
+    
+    if not step2_ls3_losses:
+        raise ValueError("No Step 2 Loss_ls-3-mean values found")
+    
+    min_loss = min(step2_ls3_losses)
+    # print(f"\nAll Step 2 Loss_ls-3-mean values: {step2_ls3_losses}")
+    # print(f"Total count: {len(step2_ls3_losses)}")
+    # print(f"Minimum Step 2 Loss_ls-3-mean: {min_loss}")
+    
+    return min_loss
 
-    return min(step_2_losses[-400:])
-
+# NOTE: look into the discrepancy in loss between base implementation log and ours ki why is that so different(it is unusually smaller than theirs)
+# NOTE: the min chosen here should not necessarily be the last in a tick, right?(what we talked about last night) ig beech mai bhi kahi ho sakta h and wahi dekhna chahiye and training loop update karke waha snapshot lena chahiye(85% chance ki wahi save ho raha h lol, just make sure yahi ho and extract bhi yahi ho)
+# ANS: DONE
+# NOTE: This should be least loss_ls-3-mean of step 2 instead of step_2 loss-mean to minimise the same thing as that compared to the original paper and in fact that is exactly what we are using to generate the images so comparing this loss should be same as comparing FID of both
+# ANS: DONE
+# NOTE: Check the sampling is correct na, ie. sampling mai we are taking the output of the final layer hi na
+# ANS: ha sampling to sahi h bilkul
 
 def make_objective(base_exp_id: int, log_dir: str):
     """
