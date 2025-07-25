@@ -1,3 +1,4 @@
+<!--
 ## Simple and Fast Distillation of Diffusion Models <br><sub>Official implementation of the NeurIPS 2024 paper</sub>
 
 <img src="assets/sd.jpg" alt="sd" width="800" >
@@ -136,3 +137,4 @@ If you find this repository useful, please consider citing the following paper:
   year={2024}
 }
 ```
+!-->
