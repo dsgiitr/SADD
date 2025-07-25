@@ -20,6 +20,7 @@ from torch_utils.download_util import check_file_by_key
 import torchvision.utils as vutils
 
 from torch.utils.tensorboard import SummaryWriter
+import glob
 #----------------------------------------------------------------------------
 # Load pre-trained models from the LDM codebase (https://github.com/CompVis/latent-diffusion) 
 # and Stable Diffusion codebase (https://github.com/CompVis/stable-diffusion)
@@ -364,7 +365,7 @@ def training_loop(
                 dist.print0("Step: {} | Loss_ls-{}-mean: {:12.8f} | loss_ls-{}-std: {:12.8f}".format(step_idx, i, loss_ls_norm[i].mean().item(), i, loss_ls_norm[i].std().item()))
                 writer.add_scalar(f'Loss/loss_ls_{i}', loss_ls_norm[i].mean().item(), cur_nimg // 1000)
             if step_idx == loss_fn.num_steps - 2:
-                final_loss = loss.mean()
+                final_loss = loss_mean
 
             if not (loss_fn.afs and step_idx == 0):
                 for param in net.parameters():
@@ -482,8 +483,15 @@ def training_loop(
         #     del data # conserve memory
 
         # Save the snapshot of the network if the loss is the best so far.
-        if (cur_tick != 0) and (done or final_loss < best_loss):
+        if (cur_tick != 0) and (final_loss < best_loss):
             best_loss = final_loss
+            
+            # Delete the previous snapshot file if it exists (assumes there is at most one)
+            snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
+            prev_files = glob.glob(snapshot_pattern)
+            if prev_files:
+                os.remove(prev_files[0])
+
             data = dict(model=net)
             for key, value in data.items():
                 if isinstance(value, torch.nn.Module):
@@ -495,6 +503,7 @@ def training_loop(
                 with open(os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl'), 'wb') as f:
                     pickle.dump(data, f)
             del data  # conserve memory
+            
 
 
         # Save full dump of the training state.
@@ -524,5 +533,5 @@ def training_loop(
     dist.print0()
     dist.print0('Exiting...')
     dist.print0()
-    dist.print0('minimum loss: ', best_loss.item())
+    dist.print0('minimum loss: ', best_loss)
     writer.close()

@@ -15,6 +15,7 @@ dependencies:
   - requests
   - tqdm
   - imageio
+  - glob 
   - pip:
       - imageio-ffmpeg>=0.4.3
       - pyspng
