@@ -20,6 +20,7 @@ from torch_utils.download_util import check_file_by_key
 import torchvision.utils as vutils
 
 from torch.utils.tensorboard import SummaryWriter
+import glob
 #----------------------------------------------------------------------------
 # Load pre-trained models from the LDM codebase (https://github.com/CompVis/latent-diffusion) 
 # and Stable Diffusion codebase (https://github.com/CompVis/stable-diffusion)
@@ -264,11 +265,15 @@ def training_loop(
     rig = RandomIntGenerator()
     num_acc_rounds = 128 // batch_size if dataset_name == 'ms_coco' else 1
     batch_gpu_total = num_acc_rounds * batch_gpu
+
+    # Initialize best_loss to a very high number.
+    best_loss = float('inf')
+    
     if guidance_type == 'cfg' and dataset_name in ['ms_coco']:
         with torch.no_grad():
             uc = net.model.get_learned_conditioning(batch_gpu * [""])
     loss = torch.zeros(1,)
-
+    
     while True:
         if torch.isnan(loss).any().item():
             net.use_fp16 = False 
@@ -359,6 +364,8 @@ def training_loop(
                 loss_ls_norm.append(loss_ls[i].norm(p=2, dim=(1,2,3)))
                 dist.print0("Step: {} | Loss_ls-{}-mean: {:12.8f} | loss_ls-{}-std: {:12.8f}".format(step_idx, i, loss_ls_norm[i].mean().item(), i, loss_ls_norm[i].std().item()))
                 writer.add_scalar(f'Loss/loss_ls_{i}', loss_ls_norm[i].mean().item(), cur_nimg // 1000)
+            if step_idx == loss_fn.num_steps - 2:
+                final_loss = loss_mean
 
             if not (loss_fn.afs and step_idx == 0):
                 for param in net.parameters():
@@ -461,8 +468,30 @@ def training_loop(
             dist.print0()
             dist.print0('Aborting...')
             
-        # Save network snapshot.
-        if (snapshot_ticks is not None) and (done or cur_tick % snapshot_ticks == 0) and (cur_tick != 0):
+        # # Save network snapshot.
+        # if (snapshot_ticks is not None) and (done or cur_tick % snapshot_ticks == 0) and (cur_tick != 0):
+        #     data = dict(model=net)
+        #     for key, value in data.items():
+        #         if isinstance(value, torch.nn.Module):
+        #             value = copy.deepcopy(value).eval().requires_grad_(False)
+        #             misc.check_ddp_consistency(value)
+        #             data[key] = value.cpu()
+        #         del value
+        #     if dist.get_rank() == 0:
+        #         with open(os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl'), 'wb') as f:
+        #             pickle.dump(data, f)
+        #     del data # conserve memory
+
+        # Save the snapshot of the network if the loss is the best so far.
+        if (cur_tick != 0) and (final_loss < best_loss):
+            best_loss = final_loss
+            
+            # Delete the previous snapshot file if it exists (assumes there is at most one)
+            snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
+            prev_files = glob.glob(snapshot_pattern)
+            if prev_files:
+                os.remove(prev_files[0])
+
             data = dict(model=net)
             for key, value in data.items():
                 if isinstance(value, torch.nn.Module):
@@ -473,7 +502,9 @@ def training_loop(
             if dist.get_rank() == 0:
                 with open(os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl'), 'wb') as f:
                     pickle.dump(data, f)
-            del data # conserve memory
+            del data  # conserve memory
+            
+
 
         # Save full dump of the training state.
         # if (state_dump_ticks is not None) and (done or cur_tick % state_dump_ticks == 0) and cur_tick != 0 and dist.get_rank() == 0:
@@ -501,4 +532,6 @@ def training_loop(
 
     dist.print0()
     dist.print0('Exiting...')
+    dist.print0()
+    dist.print0('minimum loss: ', best_loss)
     writer.close()

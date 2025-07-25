@@ -86,8 +86,8 @@ def make_objective(base_exp_id: int, log_dir: str):
 
 
 if __name__ == '__main__':
-    BASE_EXP_ID = 147
-    LOG_DIR = "/teamspace/studios/this_studio/sfd-main/exps"
+    BASE_EXP_ID = 0
+    LOG_DIR = "/home/cherish/SADD/sfd-main/exps"
 
     objective = make_objective(BASE_EXP_ID - 1, LOG_DIR)
 
