@@ -11,3 +11,11 @@ test/
 exps/
 runs/
 *.zip
+.vscode-server
+.bash_history
+.cursor-server
+.lesshst
+.viminfo
+.windsurf-server
+.wget-hsts
+./sfd-main/runs

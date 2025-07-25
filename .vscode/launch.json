@@ -1,32 +1,31 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-      {
-        "name": "Debug train.py",
-        "type": "debugpy",
-        "request": "launch",
-        "program": "${workspaceFolder}/train.py",
-        "console": "integratedTerminal",
-        "args": [
-          "--dataset_name=ms_coco",
-          "--total_kimg=200",
-          "--batch=1",
-          "--lr=5e-5",
-          "--num_steps=4",
-          "--M=3",
-          "--afs=False",
-          "--sampler_tea=dpmpp",
-          "--max_order=3",
-          "--predict_x0=True",
-          "--lower_order_final=True",
-          "--schedule_type=polynomial",
-          "--schedule_rho=7",
-          "--use_step_condition=False",
-          "--is_second_stage=False",
-          "--use_repeats=False",
-          "--seed=1913901889"
-        ]
-      }
-    ]
-  }
-  
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug train.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/teamspace/studios/this_studio/sfd-main/train.py",
+      "console": "integratedTerminal",
+      "args": [
+        "--dataset_name=cifar10",
+        "--total_kimg=200",
+        "--batch=2",
+        "--lr=5e-5",
+        "--num_steps=4",
+        "--M=3",
+        "--afs=False",
+        "--sampler_tea=dpmpp",
+        "--max_order=3",
+        "--predict_x0=True",
+        "--lower_order_final=True",
+        "--schedule_type=polynomial",
+        "--schedule_rho=7",
+        "--use_step_condition=False",
+        "--is_second_stage=False",
+        "--use_repeats=True",
+        "--seed=1913901889"
+      ]
+    }
+  ]
+}

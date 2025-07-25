@@ -101,9 +101,9 @@ class loss:
             loss_list=[]
             for i in range(-4, 0):
                 l = (student_out[i] - teacher_out[i]).abs()
+                loss_list.append(l)
                 multiplier = (weight_ls[i] * loss_x_list[-1]) / denominator
                 l = l * multiplier
-                loss_list.append(l)
                 loss += l
                 
         else:
