@@ -27,7 +27,7 @@ evaluation_records = []
 #     return min(step_2_losses)
 
 
-def find_min_s2_loss_ls3(log_path: str) -> float:
+def find_min_s2_loss(log_path: str) -> float:
     """
     Parse the log file to extract all Step 2 Loss_ls-3-mean values
     and return their minimum.
