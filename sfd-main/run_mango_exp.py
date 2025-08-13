@@ -4,7 +4,6 @@ import csv
 import os
 import optuna
 from scipy.stats import uniform  # you can remove if unused
-from optuna.integration import TFKerasPruningCallback  # example import if using Keras inside
 
 # ---------- log parsing ----------
 
