@@ -27,6 +27,20 @@ def find_min_s2_loss(log_path: str) -> float:
 
     return min(step2_ls3_losses)
 
+def find_last_tick(log_path: str) -> int:
+    """
+    Parse the log file to find the tick value from the last 'tick' line.
+    """
+    tick_pattern = re.compile(r"tick\s+(\d+)\b")
+    last_tick = None
+
+    with open(log_path, 'r') as f:
+        for line in f:
+            match = tick_pattern.search(line)
+            if match:
+                last_tick = int(match.group(1))
+
+    return last_tick
 
 # ---------- Optuna objective factory ----------
 
@@ -57,7 +71,6 @@ def make_objective(base_exp_id: int, log_dir: str, train_script="train.py", extr
         exp_idx = trial.number + 1 + base_exp_id
         exp_folder = f"{exp_idx:05d}-cifar10-4-3-dpmpp-3-poly7.0"
         exp_path = os.path.join(log_dir, exp_folder)
-        os.makedirs(exp_path, exist_ok=True)
         log_path = os.path.join(exp_path, "log.txt")
 
         print(f"[Trial {trial.number}] a,b,c = {[a, b, c]}")
@@ -91,19 +104,20 @@ def make_objective(base_exp_id: int, log_dir: str, train_script="train.py", extr
         if extra_cmd:
             cmd.extend(extra_cmd)
 
-        # Run the subprocess and capture its output into log.txt
-        with open(log_path, "w") as log_file:
-            try:
-                subprocess.run(cmd, stdout=log_file, stderr=subprocess.STDOUT, check=True)
-            except subprocess.CalledProcessError as e:
-                # if the training fails, mark trial as failed
-                print(f"[Trial {trial.number}] training failed (subprocess error): {e}")
-                # You can either return a large loss or raise to mark as failed
-                raise
+        # # Run the subprocess and capture its output into log.txt
+        # with open(log_path, "w") as log_file:
+        #     try:
+        #         subprocess.run(cmd, stdout=log_file, stderr=subprocess.STDOUT, check=True)
+        #     except subprocess.CalledProcessError as e:
+        #         # if the training fails, mark trial as failed
+        #         print(f"[Trial {trial.number}] training failed (subprocess error): {e}")
+        #         # You can either return a large loss or raise to mark as failed
+        #         raise
+        subprocess.run(cmd, check=True)
 
         # after successful run, parse the log for objective
         try:
-            loss = find_min_s2_loss(log_path)
+            loss = find_last_tick(log_path)
         except Exception as e:
             print(f"[Trial {trial.number}] failed to parse log: {e}")
             raise
@@ -125,8 +139,8 @@ def make_objective(base_exp_id: int, log_dir: str, train_script="train.py", extr
 # ---------- main ----------
 
 if __name__ == "__main__":
-    BASE_EXP_ID = 0
-    LOG_DIR = "/home/cherish/SADD/sfd-main/exps"
+    BASE_EXP_ID = 162
+    LOG_DIR = "/teamspace/studios/this_studio/sfd-main/exps"
 
     # Make an Optuna study: use TPE (Bayesian-ish) sampler + a median pruner (works if you report intermediate values)
     # If you want distributed storage use SQLite or RDB: storage="sqlite:///optuna_study.db"

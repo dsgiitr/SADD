@@ -343,7 +343,7 @@ def training_loop(
                             teacher_out=teacher_traj[round_idx][start:end],
                             weight_ls = weight_ls
                     
-                        )
+                        ) # NOTE : Loss here is that weighted loss that big ass normalisation formula and the 
                     # print("Shape of stu_out_comp: ", stu_out_comp.shape)
                     student_traj.append(stu_out_comp[:4,:,:,:])
                     latents[round_idx] = stu_out
@@ -360,12 +360,16 @@ def training_loop(
             dist.print0("Step: {} | Loss-mean: {:12.8f} | loss-std: {:12.8f}".format(step_idx, loss_mean, loss_std))
             writer.add_scalar('Loss/loss_total', loss_mean, cur_nimg // 1000)
             loss_ls_norm = []
+
             for i in range(len(loss_ls)):
                 loss_ls_norm.append(loss_ls[i].norm(p=2, dim=(1,2,3)))
                 dist.print0("Step: {} | Loss_ls-{}-mean: {:12.8f} | loss_ls-{}-std: {:12.8f}".format(step_idx, i, loss_ls_norm[i].mean().item(), i, loss_ls_norm[i].std().item()))
+                if step_idx == loss_fn.num_steps - 2 and i ==len(loss_ls)-1:
+                    final_loss = loss_ls_norm[i].mean().item()
+
                 writer.add_scalar(f'Loss/loss_ls_{i}', loss_ls_norm[i].mean().item(), cur_nimg // 1000)
-            if step_idx == loss_fn.num_steps - 2:
-                final_loss = loss_mean
+            # if step_idx == loss_fn.num_steps - 2:
+            #     final_loss = loss_mean
 
             if not (loss_fn.afs and step_idx == 0):
                 for param in net.parameters():
@@ -486,19 +490,12 @@ def training_loop(
         if (cur_tick != 0) and (final_loss < best_loss):
             best_loss = final_loss
             
-            # Only the main process (rank 0) handles file operations
-            if dist.get_rank() == 0:
-                # Delete the previous snapshot file if it exists
-                snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
-                prev_files = glob.glob(snapshot_pattern)
-                for prev_file in prev_files:
-                    try:
-                        os.remove(prev_file)
-                        dist.print0(f"Removed previous snapshot: {prev_file}")
-                    except (FileNotFoundError, PermissionError, OSError) as e:
-                        dist.print0(f"Warning: Could not remove {prev_file}: {e}")
+            # Delete the previous snapshot file if it exists (assumes there is at most one)
+            snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
+            prev_files = glob.glob(snapshot_pattern)
+            if prev_files:
+                os.remove(prev_files[0])
 
-            # Prepare model data (all processes do this for consistency)
             data = dict(model=net)
             for key, value in data.items():
                 if isinstance(value, torch.nn.Module):
@@ -506,18 +503,13 @@ def training_loop(
                     misc.check_ddp_consistency(value)
                     data[key] = value.cpu()
                 del value
-            
-            # Only rank 0 saves the file
             if dist.get_rank() == 0:
-                snapshot_filename = f'network-snapshot-{cur_nimg//1000:06d}-loss-{best_loss:.6f}.pkl'
-                snapshot_path = os.path.join(run_dir, snapshot_filename)
-                with open(snapshot_path, 'wb') as f:
+                with open(os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl'), 'wb') as f:
                     pickle.dump(data, f)
-                dist.print0(f"Saved new best snapshot: {snapshot_filename}")
-            
             del data  # conserve memory
-                    
-
+            
+        if best_loss<4.69043016:
+            done= True
 
         # Save full dump of the training state.
         # if (state_dump_ticks is not None) and (done or cur_tick % state_dump_ticks == 0) and cur_tick != 0 and dist.get_rank() == 0:

@@ -88,7 +88,7 @@ def euler_sampler(
             use_afs = afs and (((not train) and chunk_idx == 0) or (train and step_idx == 0))
 
             if use_afs:
-                print("doing afs")
+                # print("doing afs")
                 # Analytical update for all steps in this chunk
                 x_current = x_cur
                 t_current = t_cur
@@ -105,7 +105,7 @@ def euler_sampler(
                     x_current = x_next
                     t_current = t_next
             else:
-                print("not doing afs")
+                # print("not doing afs")
                 # Multi-step prediction
                 denoised_multistep = get_denoised(
                     net, x_cur, t_cur, 
@@ -145,10 +145,10 @@ def euler_sampler(
             # Euler step.
             use_afs = afs and (((not train) and i == 0) or (train and step_idx == 0))
             if use_afs:
-                print("doinf afs")
+                # print("doinf afs")
                 d_cur = x_cur / ((1 + t_cur**2).sqrt())
             else:
-                print("not doing afs")
+                # print("not doing afs")
                 denoised = get_denoised(net, x_cur, t_cur, class_labels=class_labels, condition=condition, 
                                         unconditional_condition=unconditional_condition, step_condition=step_condition)
 

@@ -109,7 +109,7 @@ def main(seeds, grid, outdir, subdirs, device=torch.device('cuda'), **solver_kwa
                 break
     dist.print0(f'Loading distilled model from "{model_path}"...')
     with dnnlib.util.open_url(model_path, verbose=(dist.get_rank() == 0)) as f:
-        net = pickle.load(f)['model'].to(device)
+        net = pickle.load(f)['ema'].to(device)
     net.eval()
 
     # Other ranks follow.
