@@ -446,6 +446,41 @@ def training_loop(
 
         cur_nimg += batch_size * num_acc_rounds
         done = (cur_nimg >= total_kimg * 1000)
+
+        if (cur_tick != 0) and (final_loss < best_loss):
+            best_loss = final_loss
+            
+            # Only the main process (rank 0) handles file operations
+            if dist.get_rank() == 0:
+                # Delete the previous snapshot file if it exists
+                snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
+                prev_files = glob.glob(snapshot_pattern)
+                for prev_file in prev_files:
+                    try:
+                        os.remove(prev_file)
+                        dist.print0(f"Removed previous snapshot: {prev_file}")
+                    except (FileNotFoundError, PermissionError, OSError) as e:
+                        dist.print0(f"Warning: Could not remove {prev_file}: {e}")
+
+            # Prepare model data (all processes do this for consistency)
+            data = dict(model=net)
+            for key, value in data.items():
+                if isinstance(value, torch.nn.Module):
+                    value = copy.deepcopy(value).eval().requires_grad_(False)
+                    misc.check_ddp_consistency(value)
+                    data[key] = value.cpu()
+                del value
+            
+            # Only rank 0 saves the file
+            if dist.get_rank() == 0:
+                snapshot_filename = f'network-snapshot-{cur_nimg//1000:06d}-loss-{best_loss:.6f}.pkl'
+                snapshot_path = os.path.join(run_dir, snapshot_filename)
+                with open(snapshot_path, 'wb') as f:
+                    pickle.dump(data, f)
+                dist.print0(f"Saved new best snapshot: {snapshot_filename}")
+            
+            del data  # conserve memory
+
         if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * 1000):
             continue
 
@@ -483,39 +518,7 @@ def training_loop(
         #     del data # conserve memory
 
         # Save the snapshot of the network if the loss is the best so far.
-        if (cur_tick != 0) and (final_loss < best_loss):
-            best_loss = final_loss
-            
-            # Only the main process (rank 0) handles file operations
-            if dist.get_rank() == 0:
-                # Delete the previous snapshot file if it exists
-                snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
-                prev_files = glob.glob(snapshot_pattern)
-                for prev_file in prev_files:
-                    try:
-                        os.remove(prev_file)
-                        dist.print0(f"Removed previous snapshot: {prev_file}")
-                    except (FileNotFoundError, PermissionError, OSError) as e:
-                        dist.print0(f"Warning: Could not remove {prev_file}: {e}")
-
-            # Prepare model data (all processes do this for consistency)
-            data = dict(model=net)
-            for key, value in data.items():
-                if isinstance(value, torch.nn.Module):
-                    value = copy.deepcopy(value).eval().requires_grad_(False)
-                    misc.check_ddp_consistency(value)
-                    data[key] = value.cpu()
-                del value
-            
-            # Only rank 0 saves the file
-            if dist.get_rank() == 0:
-                snapshot_filename = f'network-snapshot-{cur_nimg//1000:06d}-loss-{best_loss:.6f}.pkl'
-                snapshot_path = os.path.join(run_dir, snapshot_filename)
-                with open(snapshot_path, 'wb') as f:
-                    pickle.dump(data, f)
-                dist.print0(f"Saved new best snapshot: {snapshot_filename}")
-            
-            del data  # conserve memory
+        
                     
 
 

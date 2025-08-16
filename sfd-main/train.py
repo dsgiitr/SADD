@@ -59,7 +59,7 @@ warnings.filterwarnings('ignore', 'Grad strides do not match bucket view strides
 @click.option('-n', '--dry-run',    help='Print training options and exit',                            is_flag=True)
 
 # Our hyperparam
-@click.option('--use_repeats',            help='To predict teacher internal step or not', metavar='BOOL',                  type=bool, default=True, show_default=True)
+@click.option('--use_repeats',            help='To predict teacher internal step or not', metavar='BOOL', type=bool, default=True, show_default=True)
 @click.option('--weight_ls', help='Comma-separated list for loss weights', type=str, default="1,1,1,1")
 
 def main(**kwargs):
