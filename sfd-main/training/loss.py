@@ -100,7 +100,7 @@ class loss:
             loss = 0
             loss_list=[]
             for i in range(-4, 0):
-                l = (student_out[i] - teacher_out[i]).abs()
+                l = (student_out[i] - teacher_out[i]).abs() # Ensure: the order of layers and jo range se input jaa raha h as in indexing theek ho rahi h na -4,-3,-2,-1 wali. ie basically sahi weights mil rahe h na layers ko
                 loss_list.append(l)
                 multiplier = (weight_ls[i] * loss_x_list[-1]) / denominator
                 l = l * multiplier
