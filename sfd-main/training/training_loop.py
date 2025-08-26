@@ -273,7 +273,7 @@ def training_loop(
         with torch.no_grad():
             uc = net.model.get_learned_conditioning(batch_gpu * [""])
     loss = torch.zeros(1,)
-    
+    to_save = 0
     while True:
         if torch.isnan(loss).any().item():
             net.use_fp16 = False 
@@ -364,7 +364,7 @@ def training_loop(
             for i in range(len(loss_ls)):
                 loss_ls_norm.append(loss_ls[i].norm(p=2, dim=(1,2,3)))
                 dist.print0("Step: {} | Loss_ls-{}-mean: {:12.8f} | loss_ls-{}-std: {:12.8f}".format(step_idx, i, loss_ls_norm[i].mean().item(), i, loss_ls_norm[i].std().item()))
-                if step_idx == loss_fn.num_steps - 2 and i ==len(loss_ls)-1:
+                if step_idx == loss_fn.M-1 and i ==len(loss_ls)-1:
                     final_loss = loss_ls_norm[i].mean().item()
 
                 writer.add_scalar(f'Loss/loss_ls_{i}', loss_ls_norm[i].mean().item(), cur_nimg // 1000)
@@ -376,6 +376,7 @@ def training_loop(
                     if param.grad is not None:
                         torch.nan_to_num(param.grad, nan=0, posinf=1e5, neginf=-1e5, out=param.grad)
                 optimizer.step()
+                to_save += 1
 
         # if(cur_tick % 10 == 0):
         #     for round_idx in range(num_acc_rounds):    
@@ -450,40 +451,57 @@ def training_loop(
 
         cur_nimg += batch_size * num_acc_rounds
         done = (cur_nimg >= total_kimg * 1000)
+        if to_save % 10 == 0:
+            if dist.get_rank() == 0:  # Only save from main process
+                data = dict(model=net)
+                for key, value in data.items():
+                    if isinstance(value, torch.nn.Module):
+                        value = copy.deepcopy(value).eval().requires_grad_(False)
+                        misc.check_ddp_consistency(value)
+                        data[key] = value.cpu()
+                    del value
 
-        if (cur_tick != 0) and (final_loss < best_loss):
-            best_loss = final_loss
-            
-            # Only the main process (rank 0) handles file operations
-            if dist.get_rank() == 0:
-                # Delete the previous snapshot file if it exists
-                snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
-                prev_files = glob.glob(snapshot_pattern)
-                for prev_file in prev_files:
-                    try:
-                        os.remove(prev_file)
-                        dist.print0(f"Removed previous snapshot: {prev_file}")
-                    except (FileNotFoundError, PermissionError, OSError) as e:
-                        dist.print0(f"Warning: Could not remove {prev_file}: {e}")
-
-            # Prepare model data (all processes do this for consistency)
-            data = dict(model=net)
-            for key, value in data.items():
-                if isinstance(value, torch.nn.Module):
-                    value = copy.deepcopy(value).eval().requires_grad_(False)
-                    misc.check_ddp_consistency(value)
-                    data[key] = value.cpu()
-                del value
-            
-            # Only rank 0 saves the file
-            if dist.get_rank() == 0:
-                snapshot_filename = f'network-snapshot-{cur_nimg//1000:06d}-loss-{best_loss:.6f}.pkl'
+                snapshot_filename = f'network-snapshot-{to_save}.pkl'
                 snapshot_path = os.path.join(run_dir, snapshot_filename)
                 with open(snapshot_path, 'wb') as f:
                     pickle.dump(data, f)
-                dist.print0(f"Saved new best snapshot: {snapshot_filename}")
+                dist.print0(f"Saved periodic snapshot: {snapshot_filename}")
+
+                del data  # conserve memory
+        # if (cur_tick != 0) and (final_loss < best_loss):
+        #     best_loss = final_loss
             
-            del data  # conserve memory
+        #     # Only the main process (rank 0) handles file operations
+        #     if dist.get_rank() == 0:
+        #         # Delete the previous snapshot file if it exists
+        #         snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
+        #         prev_files = glob.glob(snapshot_pattern)
+        #         for prev_file in prev_files:
+        #             try:
+        #                 os.remove(prev_file)
+        #                 dist.print0(f"Removed previous snapshot: {prev_file}")
+        #             except (FileNotFoundError, PermissionError, OSError) as e:
+        #                 dist.print0(f"Warning: Could not remove {prev_file}: {e}")
+
+        #     # Prepare model data (all processes do this for consistency)
+        #     data = dict(model=net)
+        #     for key, value in data.items():
+        #         if isinstance(value, torch.nn.Module):
+        #             value = copy.deepcopy(value).eval().requires_grad_(False)
+        #             misc.check_ddp_consistency(value)
+        #             data[key] = value.cpu()
+        #         del value
+            
+        #     # Only rank 0 saves the file
+        #     if dist.get_rank() == 0:
+        #         snapshot_filename = f'network-snapshot-{cur_nimg//1000:06d}-loss-{best_loss:.6f}.pkl'
+        #         snapshot_path = os.path.join(run_dir, snapshot_filename)
+        #         with open(snapshot_path, 'wb') as f:
+        #             pickle.dump(data, f)
+        #         dist.print0(f"Saved new best snapshot: {snapshot_filename}")
+            
+        #     del data  # conserve memory
+
 
         if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * 1000):
             continue
@@ -508,7 +526,30 @@ def training_loop(
             dist.print0('Aborting...')
             
         # # Save network snapshot.
-        # if (snapshot_ticks is not None) and (done or cur_tick % snapshot_ticks == 0) and (cur_tick != 0):
+        if (snapshot_ticks is not None) and (done or cur_tick % snapshot_ticks == 0) and (cur_tick != 0):
+            data = dict(model=net)
+            for key, value in data.items():
+                if isinstance(value, torch.nn.Module):
+                    value = copy.deepcopy(value).eval().requires_grad_(False)
+                    misc.check_ddp_consistency(value)
+                    data[key] = value.cpu()
+                del value
+            if dist.get_rank() == 0:
+                # with open(os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl'), 'wb') as f:
+                with open(os.path.join(run_dir, f'network-snapshot-999999.pkl'), 'wb') as f:
+                    pickle.dump(data, f)
+            del data # conserve memory
+
+        # Save the snapshot of the network if the loss is the best so far.
+        # if (cur_tick != 0) and (final_loss < best_loss):
+        #     best_loss = final_loss
+            
+        #     # Delete the previous snapshot file if it exists (assumes there is at most one)
+        #     snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
+        #     prev_files = glob.glob(snapshot_pattern)
+        #     if prev_files:
+        #         os.remove(prev_files[0])
+
         #     data = dict(model=net)
         #     for key, value in data.items():
         #         if isinstance(value, torch.nn.Module):
@@ -519,32 +560,12 @@ def training_loop(
         #     if dist.get_rank() == 0:
         #         with open(os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl'), 'wb') as f:
         #             pickle.dump(data, f)
-        #     del data # conserve memory
-
-        # Save the snapshot of the network if the loss is the best so far.
-        if (cur_tick != 0) and (final_loss < best_loss):
-            best_loss = final_loss
+        #     del data  # conserve memory
             
-            # Delete the previous snapshot file if it exists (assumes there is at most one)
-            snapshot_pattern = os.path.join(run_dir, 'network-snapshot-*.pkl')
-            prev_files = glob.glob(snapshot_pattern)
-            if prev_files:
-                os.remove(prev_files[0])
-
-            data = dict(model=net)
-            for key, value in data.items():
-                if isinstance(value, torch.nn.Module):
-                    value = copy.deepcopy(value).eval().requires_grad_(False)
-                    misc.check_ddp_consistency(value)
-                    data[key] = value.cpu()
-                del value
-            if dist.get_rank() == 0:
-                with open(os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl'), 'wb') as f:
-                    pickle.dump(data, f)
-            del data  # conserve memory
-            
-        if best_loss<4.69043016:
-            done= True
+        # if best_loss<4.69043016:
+        #     done= True
+        # if best_loss < 4.7:
+        #     done = True
 
         # Save full dump of the training state.
         # if (state_dump_ticks is not None) and (done or cur_tick % state_dump_ticks == 0) and cur_tick != 0 and dist.get_rank() == 0:
