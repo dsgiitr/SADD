@@ -370,13 +370,13 @@ def training_loop(
                 writer.add_scalar(f'Loss/loss_ls_{i}', loss_ls_norm[i].mean().item(), cur_nimg // 1000)
             # if step_idx == loss_fn.num_steps - 2:
             #     final_loss = loss_mean
-
             if not (loss_fn.afs and step_idx == 0):
                 for param in net.parameters():
                     if param.grad is not None:
                         torch.nan_to_num(param.grad, nan=0, posinf=1e5, neginf=-1e5, out=param.grad)
                 optimizer.step()
-                to_save += 1
+                
+        to_save += 1
 
         # if(cur_tick % 10 == 0):
         #     for round_idx in range(num_acc_rounds):    
