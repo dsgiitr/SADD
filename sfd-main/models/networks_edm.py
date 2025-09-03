@@ -465,6 +465,8 @@ class DhariwalUNet(torch.nn.Module):
         init_zero = dict(init_mode='kaiming_uniform', init_weight=0, init_bias=0)
         block_kwargs = dict(emb_channels=emb_channels, channels_per_head=64, dropout=dropout, init=init, init_zero=init_zero)
 
+        self.repeat = repeat
+
         # Mapping.
         self.map_noise = PositionalEmbedding(num_channels=model_channels)
         self.map_augment = Linear(in_features=augment_dim, out_features=model_channels, bias=False, **init_zero) if augment_dim else None

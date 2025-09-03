@@ -41,7 +41,7 @@ train_cmds = [
     # ]
     [
         "python", "train.py",
-        "--dataset_name=cifar10",
+        "--dataset_name=imagenet64",
         "--total_kimg=200",
         "--batch=128",
         "--lr=5e-5",
@@ -56,7 +56,7 @@ train_cmds = [
         "--schedule_rho=7",
         "--use_step_condition=False",
         "--is_second_stage=False",
-        "--weight_ls=0.0042,0.0637,0.328,1.0",
+        "--weight_ls=0.06196116944815122,0.0623024760905604,0.2576291959892717,1.166201974091098",
         "--seed=191390188"
     ]
 ]
@@ -71,12 +71,14 @@ base_folders = [
     # "/home/cherish/SADD/sfd-main/exps/00000-cifar10-4-3-dpmpp-3-poly7.0",
     # "/home/cherish/SADD/sfd-main/exps/00000-cifar10-4-3-dpmpp-3-poly7.0",
     "/home/cherish/SADD/sfd-main/exps/00000-cifar10-4-2-dpmpp-3-poly7.0-afs",
-    "/home/cherish/SADD/sfd-main/exps/00001-cifar10-4-2-dpmpp-3-poly7.0-afs",
+    # "/home/cherish/SADD/sfd-main/exps/00001-cifar10-4-2-dpmpp-3-poly7.0-afs",
 ]
 
-for folder in base_folders:
-    print(f"\nRunning FID calculation for: {folder}\n")
-    subprocess.run(
-        ["python", "cal_fid_for_mult_models.py", f"--base_folder={folder}"],#,"--max_workers=4"],
-        check=True
-    )
+# for folder in base_folders:
+#     print(f"\nRunning FID calculation for: {folder}\n")
+#     subprocess.run(
+#         ["python", "calc_fid_single.py", f"--folder={folder}",f"--dataset=imagenet64"],
+#         check=True
+#     )
+
+

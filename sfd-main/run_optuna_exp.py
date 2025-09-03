@@ -247,7 +247,8 @@ def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="
         weights = [w1, w2, w3, w4]
 
         # Experiment naming
-        exp_idx = trial.number + 1 + base_exp_id
+        exp_idx = trial.number + base_exp_id
+        
         exp_folder = f"{exp_idx:05d}-cifar10-4-2-dpmpp-3-poly7.0-afs"
         exp_path = os.path.join(log_dir, exp_folder)
 
@@ -289,9 +290,6 @@ def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="
         fid_cmd = [
             "python", "calc_fid_single.py",  # assuming your FID script
             f"--folder={exp_path}",
-            "--dataset_name=cifar10",
-            "--seeds=0-49999",
-            "--batch=256"
         ]
 
         try:
@@ -322,7 +320,7 @@ def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="
 # ---------- main ----------
 
 if __name__ == "__main__":
-    BASE_EXP_ID = 50  # adjust based on your existing experiments
+    BASE_EXP_ID = 0  # adjust based on your existing experiments
     LOG_DIR = "/home/cherish/SADD/sfd-main/exps"
     FID_FILE = "/home/cherish/SADD/sfd-main/fid.txt"
 
