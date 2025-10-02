@@ -269,6 +269,10 @@ def training_loop(
     # Initialize best_loss to a very high number.
     best_loss = float('inf')
     
+    # Store initial weight_ls for interpolation
+    initial_weight_ls = weight_ls.copy()
+    target_weight_ls = [0, 0, 0, 1]
+    
     if guidance_type == 'cfg' and dataset_name in ['ms_coco']:
         with torch.no_grad():
             uc = net.model.get_learned_conditioning(batch_gpu * [""])
@@ -309,6 +313,27 @@ def training_loop(
                 teacher_traj = [loss_fn.get_teacher_traj(net=net_copy, tensor_in=latents[k], labels=labels[k]) for k in range(num_acc_rounds)]
                 # print("Shape of the teacher trajectory:", teacher_traj[0].shape) # shape is (total_steps, batch_size, channels, height, width)
 
+        # Calculate discrete weight updates every 1000 images within kimg_per_tick
+        images_in_tick = cur_nimg - tick_start_nimg
+        max_images_in_tick = kimg_per_tick * 1000
+        
+        steps_completed = images_in_tick // 1000
+        total_steps_in_tick = max_images_in_tick // 1000
+        
+        if total_steps_in_tick > 0:
+            progress_discrete = min(steps_completed / total_steps_in_tick, 1.0)
+        else:
+            progress_discrete = 0.0
+        
+        current_weight_ls = []
+        for i in range(len(initial_weight_ls)):
+            interpolated_weight = initial_weight_ls[i] + progress_discrete * (target_weight_ls[i] - initial_weight_ls[i])
+            current_weight_ls.append(interpolated_weight)
+        
+        # Print weight updates every 1000 images
+        if cur_nimg % 1000 == 0:
+            dist.print0(f"Weight update - Step: {steps_completed}/{total_steps_in_tick}, Progress: {progress_discrete:.3f}, Current weights: {[f'{w:.3f}' for w in current_weight_ls]}, Images: {cur_nimg}")
+
         student_traj = []
         for step_idx in range(loss_fn.num_steps - 1):
             # if step_idx in [1, 2]:
@@ -333,7 +358,7 @@ def training_loop(
                                 teacher_out=teacher_traj[round_idx][start:end], 
                                 condition=c[round_idx], 
                                 unconditional_condition=uc,
-                                weight_ls = weight_ls)
+                                weight_ls = current_weight_ls)
                     else:
                         loss, stu_out, loss_ls, stu_out_comp = loss_fn(
                             net=ddp,
@@ -341,7 +366,7 @@ def training_loop(
                             labels=labels[round_idx],
                             step_idx=step_idx,
                             teacher_out=teacher_traj[round_idx][start:end],
-                            weight_ls = weight_ls
+                            weight_ls = current_weight_ls
                     
                         ) # NOTE : Loss here is that weighted loss that big ass normalisation formula and the 
                     # print("Shape of stu_out_comp: ", stu_out_comp.shape)
