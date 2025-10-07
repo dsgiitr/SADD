@@ -324,12 +324,25 @@ def training_loop(
             progress_discrete = min(steps_completed / total_steps_in_tick, 1.0)
         else:
             progress_discrete = 0.0
-        
+                # Total images processed so far
+        total_images_processed = cur_nimg  
+
+        # Total images for the entire training
+        total_images = total_kimg * 1000  # convert kimg to images
+
+        # Compute overall discrete progress across the whole training
+        steps_completed = total_images_processed // 1000
+        total_steps = total_images // 1000
+
+        if total_steps > 0:
+            progress_discrete = min(steps_completed / total_steps, 1.0)
+        else:
+            progress_discrete = 0.0
+
         current_weight_ls = []
         for i in range(len(initial_weight_ls)):
             interpolated_weight = initial_weight_ls[i] + progress_discrete * (target_weight_ls[i] - initial_weight_ls[i])
             current_weight_ls.append(interpolated_weight)
-        
         # Print weight updates every 1000 images
         if cur_nimg % 1000 == 0:
             dist.print0(f"Weight update - Step: {steps_completed}/{total_steps_in_tick}, Progress: {progress_discrete:.3f}, Current weights: {[f'{w:.3f}' for w in current_weight_ls]}, Images: {cur_nimg}")

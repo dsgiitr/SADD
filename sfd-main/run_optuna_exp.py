@@ -208,7 +208,6 @@ def find_fid_score(fid_file_path: str, exp_folder: str) -> float:
         for line in f:
             line = line.strip()
             if line.startswith(exp_folder):
-                # Extract the last number from the line (FID score)
                 parts = line.split()
                 if len(parts) >= 2:
                     try:
@@ -222,14 +221,6 @@ def find_fid_score(fid_file_path: str, exp_folder: str) -> float:
 # ---------- Optuna objective factory ----------
 
 def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="train.py"):
-    """
-    Returns an Optuna objective function that:
-    1. Runs training with hyperparameters
-    2. Runs FID calculation 
-    3. Parses FID score from fid.txt
-    4. Returns FID score (to minimize)
-    """
-    
     os.makedirs(log_dir, exist_ok=True)
 
     def objective(trial: optuna.trial.Trial):
@@ -239,16 +230,11 @@ def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="
         c = trial.suggest_float("c", 0.0, 1.0)
         d = trial.suggest_float("d", 0.0, 1.0)
 
-        # Compute weights
-        w1 = a 
-        w2 = a + b
-        w3 = a + b + c
-        w4 = a + b + c + d
-        weights = [w1, w2, w3, w4]
+        weights = [a, a + b, a + b + c, a + b + c + d]
 
         # Experiment naming
         exp_idx = trial.number + base_exp_id
-        
+
         exp_folder = f"{exp_idx:05d}-cifar10-4-2-dpmpp-3-poly7.0-afs"
         exp_path = os.path.join(log_dir, exp_folder)
 
@@ -288,7 +274,7 @@ def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="
 
         # Step 2: Run FID calculation
         fid_cmd = [
-            "python", "calc_fid_single.py",  # assuming your FID script
+            "python", "calc_fid_single.py",
             f"--folder={exp_path}",
         ]
 
@@ -324,16 +310,20 @@ if __name__ == "__main__":
     LOG_DIR = "/home/cherish/SADD/sfd-main/exps"
     FID_FILE = "/home/cherish/SADD/sfd-main/fid.txt"
 
-    # Create Optuna study
+    # Use SQLite for persistent storage
+    DB_PATH = "sqlite:///fid_optimization.db"
+
+    # Create or load Optuna study
     study = optuna.create_study(
         study_name="diffusion_fid_optimization",
-        direction="minimize",  # minimize FID
+        storage=DB_PATH,
+        direction="minimize",
         sampler=optuna.samplers.TPESampler(),
+        load_if_exists=True  # this allows resuming
     )
 
     objective = make_objective(BASE_EXP_ID, LOG_DIR, FID_FILE)
 
-    # Configuration
     N_TRIALS = 50  # adjust as needed
 
     try:
@@ -349,11 +339,11 @@ if __name__ == "__main__":
         
         for t in study.trials:
             attrs = t.user_attrs
-            weights = attrs.get("weights", [None, None, None, None])
             a = t.params.get("a")
             b = t.params.get("b") 
             c = t.params.get("c")
             d = t.params.get("d")
+            weights = [a, a + b, a + b + c, a + b + c + d]
             fid_score = attrs.get("fid_score")
             
             writer.writerow([

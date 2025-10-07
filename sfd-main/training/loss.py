@@ -95,6 +95,8 @@ class loss:
         step = step_idx.item()
         loss_x_list=loss_xs[step]
         denominator = sum(wi * xi for wi, xi in zip(weight_ls, loss_x_list))
+        print("weight_ls")
+        print(weight_ls)
 
         if self.use_repeats:
             loss = 0
@@ -102,7 +104,8 @@ class loss:
             for i in range(-4, 0):
                 l = (student_out[i] - teacher_out[i]).abs() # Ensure: the order of layers and jo range se input jaa raha h as in indexing theek ho rahi h na -4,-3,-2,-1 wali. ie basically sahi weights mil rahe h na layers ko
                 loss_list.append(l)
-                multiplier = (weight_ls[i] * loss_x_list[-1]) / denominator
+                # multiplier = (weight_ls[i] * loss_x_list[-1]) / denominator
+                multiplier = weight_ls[i]
                 l = l * multiplier
                 loss += l
                 
