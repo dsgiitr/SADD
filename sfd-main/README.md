@@ -1,4 +1,4 @@
-<!--
+
 ## Simple and Fast Distillation of Diffusion Models <br><sub>Official implementation of the NeurIPS 2024 paper</sub>
 
 <img src="assets/sd.jpg" alt="sd" width="800" >
@@ -137,4 +137,11 @@ If you find this repository useful, please consider citing the following paper:
   year={2024}
 }
 ```
-!-->
+!
+
+CIFAR10
+NFE | SFD  | OURS
+2   | 4.53 | 4.4 something
+3   | 3.58 | 3.54812
+4   | 3.24 | 3.20822
+5   | 3.06 | 3.05663

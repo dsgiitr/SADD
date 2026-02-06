@@ -184,15 +184,58 @@
 #     print("Best params:", study.best_trial.params)
 #     print("Best loss:", study.best_value)
 #     print(f"Saved all runs to {csv_file}")
-
-
-
-
 import subprocess
 import re
 import csv
 import os
 import optuna
+from typing import Optional, Tuple
+import math
+
+# ---------- Robust folder detection ----------
+
+def find_latest_experiment_folder(log_dir: str, base_pattern: str = "cifar10") -> Tuple[str, str]:
+    """
+    Find the most recent experiment folder by checking both:
+    1. Highest experiment number
+    2. Last modified timestamp
+    Returns: (folder_name, full_path)
+    """
+    if not os.path.exists(log_dir):
+        raise FileNotFoundError(f"Log directory not found: {log_dir}")
+    
+    # Get all folders matching the pattern
+    folders = [f for f in os.listdir(log_dir) 
+               if os.path.isdir(os.path.join(log_dir, f)) and base_pattern in f]
+    
+    if not folders:
+        raise ValueError(f"No experiment folders found in {log_dir}")
+    
+    # Method 1: Find folder with highest experiment number
+    exp_numbers = []
+    for folder in folders:
+        match = re.match(r'^(\d+)-', folder)
+        if match:
+            exp_numbers.append((int(match.group(1)), folder))
+    
+    if exp_numbers:
+        latest_by_number = max(exp_numbers, key=lambda x: x[0])[1]
+    else:
+        latest_by_number = None
+    
+    # Method 2: Find last modified folder
+    folder_times = [(f, os.path.getmtime(os.path.join(log_dir, f))) for f in folders]
+    latest_by_time = max(folder_times, key=lambda x: x[1])[0]
+    
+    # Use the one with highest number, fallback to last modified
+    selected_folder = latest_by_number if latest_by_number else latest_by_time
+    
+    print(f"  Latest by number: {latest_by_number}")
+    print(f"  Latest by modification time: {latest_by_time}")
+    print(f"  Selected folder: {selected_folder}")
+    
+    return selected_folder, os.path.join(log_dir, selected_folder)
+
 
 # ---------- FID parsing ----------
 
@@ -200,46 +243,129 @@ def find_fid_score(fid_file_path: str, exp_folder: str) -> float:
     """
     Parse the fid.txt file to extract FID score for the given experiment folder.
     Looks for lines like: "exp_folder_description FID_SCORE"
+    Falls back to last entry if exact match not found.
     """
     if not os.path.exists(fid_file_path):
         raise FileNotFoundError(f"FID file not found: {fid_file_path}")
     
     with open(fid_file_path, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith(exp_folder):
-                parts = line.split()
-                if len(parts) >= 2:
-                    try:
-                        fid_score = float(parts[-1])
-                        return fid_score
-                    except ValueError:
-                        continue
+        lines = f.readlines()
+    
+    # Try exact match first
+    for line in lines:
+        line = line.strip()
+        if line.startswith(exp_folder):
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    fid_score = float(parts[-1])
+                    print(f"  Found FID score by exact match: {fid_score}")
+                    return fid_score
+                except ValueError:
+                    continue
+    
+    # If no exact match, try to find the last entry in the file
+    print(f"  Warning: No exact match for {exp_folder}, using last entry...")
+    for line in reversed(lines):
+        line = line.strip()
+        if line:
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    fid_score = float(parts[-1])
+                    print(f"  Using last FID entry in file: {fid_score}")
+                    return fid_score
+                except ValueError:
+                    continue
     
     raise ValueError(f"No FID score found for {exp_folder} in {fid_file_path}")
 
-# ---------- Optuna objective factory ----------
 
-def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="train.py"):
+# ---------- CSV updater ----------
+
+def append_trial_to_csv(csv_file: str, trial: optuna.trial.FrozenTrial):
+    """
+    Append a single trial's results to the CSV file.
+    Creates the file with headers if it doesn't exist.
+    """
+    if trial.state == optuna.trial.TrialState.PRUNED:
+        print(f"[Trial {trial.number}] Skipped (pruned).")
+        return
+    
+    file_exists = os.path.exists(csv_file)
+    
+    with open(csv_file, "a", newline="") as f:
+        writer = csv.writer(f)
+        
+        # Write header if file is new
+        if not file_exists:
+            writer.writerow([
+                "trial_number", "exp_folder", "a", "b", "constraint_value",
+                "w1", "w2", "w3", "w4", "fid_score", "state"
+            ])
+        
+        # Extract trial data
+        attrs = trial.user_attrs
+        a = attrs.get("a")
+        b = attrs.get("b")
+        constraint_value = attrs.get("constraint_value")
+        weights = attrs.get("weights", [])
+        fid_score = attrs.get("fid_score")
+        
+        # Write trial row
+        writer.writerow([
+            trial.number,
+            attrs.get("exp_folder", ""),
+            a, b, constraint_value,
+            *weights,
+            fid_score,
+            trial.state.name
+        ])
+
+
+# ---------- Optuna objective factory with reparametrization ----------
+
+def make_objective(base_exp_id: int, log_dir: str, fid_file: str, 
+                   csv_file: str, train_script="train.py"):
     os.makedirs(log_dir, exist_ok=True)
 
     def objective(trial: optuna.trial.Trial):
-        # Suggest hyperparameters
-        a = trial.suggest_float("a", 0.0, 1.0)
-        b = trial.suggest_float("b", 0.0, 1.0)
-        c = trial.suggest_float("c", 0.0, 1.0)
-        d = trial.suggest_float("d", 0.0, 1.0)
+        # REPARAMETRIZATION: Sample a and constraint directly
+        # This ensures the search space is consistent across all trials
+        
+        # Sample a from its full range
+        a = trial.suggest_float("a", 0.5, 3.0)
+        
+        # Sample the constraint value directly from its valid range
+        # constraint = 3a + b, so we sample constraint ∈ [ln(1/4), ln(4)]
+        constraint = trial.suggest_float("constraint", math.log(1/4), math.log(4))
+        
+        # Derive b from the constraint
+        b = constraint - 3*a
+        
+        # Verify b is within the acceptable range [-7, -2]
+        if b < -7.0 or b > -2.0:
+            # This combination violates the original b bounds
+            print(f"[Trial {trial.number}] Derived b={b:.4f} out of bounds [-7, -2]")
+            raise optuna.TrialPruned(f"Derived b={b:.4f} violates bounds")
+        
+        # Store derived parameters as user attributes for logging
+        trial.set_user_attr("a", a)
+        trial.set_user_attr("b", b)
+        trial.set_user_attr("constraint_value", constraint)
 
-        weights = [a, a + b, a + b + c, a + b + c + d]
-
+        # Compute weights
+        weights = [math.exp(b + i*a) for i in range(4)]
+        
         # Experiment naming
         exp_idx = trial.number + base_exp_id
-
         exp_folder = f"{exp_idx:05d}-cifar10-4-2-dpmpp-3-poly7.0-afs"
         exp_path = os.path.join(log_dir, exp_folder)
 
-        print(f"[Trial {trial.number}] Running experiment: {exp_folder}")
-        print(f"[Trial {trial.number}] weights = {weights}")
+        print(f"\n[Trial {trial.number}] Running experiment: {exp_folder}")
+        print(f"[Trial {trial.number}] Parameters: a={a:.4f}, constraint={constraint:.4f}")
+        print(f"[Trial {trial.number}] Derived b={b:.4f}")
+        print(f"[Trial {trial.number}] Weights = {[f'{w:.6f}' for w in weights]}")
 
         # Step 1: Run training
         train_cmd = [
@@ -272,7 +398,21 @@ def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="
             print(f"[Trial {trial.number}] Training failed: {e}")
             raise
 
-        # Step 2: Run FID calculation
+        # Step 2: Detect the actual experiment folder that was created
+        try:
+            print(f"[Trial {trial.number}] Detecting actual experiment folder...")
+            actual_folder, actual_path = find_latest_experiment_folder(log_dir)
+            
+            # Update exp_folder if it's different
+            if actual_folder != exp_folder:
+                print(f"[Trial {trial.number}] Note: Expected '{exp_folder}' but found '{actual_folder}'")
+                exp_folder = actual_folder
+                exp_path = actual_path
+        except Exception as e:
+            print(f"[Trial {trial.number}] Warning: Could not detect actual folder: {e}")
+            print(f"[Trial {trial.number}] Continuing with expected folder name...")
+
+        # Step 3: Run FID calculation
         fid_cmd = [
             "python", "calc_fid_single.py",
             f"--folder={exp_path}",
@@ -286,10 +426,11 @@ def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="
             print(f"[Trial {trial.number}] FID calculation failed: {e}")
             raise
 
-        # Step 3: Parse FID score
+        # Step 4: Parse FID score
         try:
+            print(f"[Trial {trial.number}] Parsing FID score...")
             fid_score = find_fid_score(fid_file, exp_folder)
-            print(f"[Trial {trial.number}] FID score: {fid_score}")
+            print(f"[Trial {trial.number}] ✓ FID score: {fid_score}")
         except Exception as e:
             print(f"[Trial {trial.number}] Failed to parse FID: {e}")
             raise
@@ -303,12 +444,26 @@ def make_objective(base_exp_id: int, log_dir: str, fid_file: str, train_script="
 
     return objective
 
+
+# ---------- Callback for CSV updates ----------
+
+class CSVCallback:
+    """Callback to update CSV after each trial"""
+    def __init__(self, csv_file: str):
+        self.csv_file = csv_file
+    
+    def __call__(self, study: optuna.Study, trial: optuna.trial.FrozenTrial):
+        append_trial_to_csv(self.csv_file, trial)
+        print(f"[Trial {trial.number}] Results appended to {self.csv_file}")
+
+
 # ---------- main ----------
 
 if __name__ == "__main__":
-    BASE_EXP_ID = 0  # adjust based on your existing experiments
+    BASE_EXP_ID = 0
     LOG_DIR = "/home/cherish/SADD/sfd-main/exps"
     FID_FILE = "/home/cherish/SADD/sfd-main/fid.txt"
+    CSV_FILE = "fid_optimization_results.csv"
 
     # Use SQLite for persistent storage
     DB_PATH = "sqlite:///fid_optimization.db"
@@ -318,44 +473,52 @@ if __name__ == "__main__":
         study_name="diffusion_fid_optimization",
         storage=DB_PATH,
         direction="minimize",
-        sampler=optuna.samplers.TPESampler(),
-        load_if_exists=True  # this allows resuming
+        sampler=optuna.samplers.TPESampler(seed=42),  # Added seed for reproducibility
+        load_if_exists=True
     )
 
-    objective = make_objective(BASE_EXP_ID, LOG_DIR, FID_FILE)
+    objective = make_objective(BASE_EXP_ID, LOG_DIR, FID_FILE, CSV_FILE)
+    csv_callback = CSVCallback(CSV_FILE)
 
-    N_TRIALS = 50  # adjust as needed
+    N_TRIALS = 200
+
+    print(f"\n{'='*60}")
+    print(f"Starting FID Optimization with Reparametrization")
+    print(f"{'='*60}")
+    print(f"Search space:")
+    print(f"  a ∈ [0.5, 3.0]")
+    print(f"  constraint (3a + b) ∈ [ln(1/4), ln(4)] ≈ [-1.386, 1.386]")
+    print(f"  b ∈ [-7.0, -2.0] (constraint applied)")
+    print(f"Total trials: {N_TRIALS}")
+    print(f"{'='*60}\n")
 
     try:
-        study.optimize(objective, n_trials=N_TRIALS)
+        study.optimize(objective, n_trials=N_TRIALS, callbacks=[csv_callback])
     except KeyboardInterrupt:
-        print("Interrupted by user. Proceeding to save results...")
+        print("\n⚠ Interrupted by user.")
 
-    # Save results to CSV
-    csv_file = "fid_optimization_results.csv"
-    with open(csv_file, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["trial_number", "exp_folder", "a", "b", "c", "d", "w1", "w2", "w3", "w4", "fid_score", "state"])
+    print(f"\n{'='*60}")
+    print(f"Optimization completed!")
+    print(f"{'='*60}")
+    
+    if len(study.trials) > 0:
+        best_trial = study.best_trial
+        best_a = best_trial.user_attrs.get("a")
+        best_b = best_trial.user_attrs.get("b")
+        best_constraint = best_trial.user_attrs.get("constraint_value")
         
-        for t in study.trials:
-            attrs = t.user_attrs
-            a = t.params.get("a")
-            b = t.params.get("b") 
-            c = t.params.get("c")
-            d = t.params.get("d")
-            weights = [a, a + b, a + b + c, a + b + c + d]
-            fid_score = attrs.get("fid_score")
-            
-            writer.writerow([
-                t.number, 
-                attrs.get("exp_folder", ""), 
-                a, b, c, d, 
-                *weights, 
-                fid_score, 
-                t.state.name
-            ])
-
-    print(f"\nOptimization completed!")
-    print(f"Best params: {study.best_trial.params}")
-    print(f"Best FID score: {study.best_value}")
-    print(f"Results saved to {csv_file}")
+        print(f"Best trial: {best_trial.number}")
+        print(f"Best FID score: {study.best_value:.4f}")
+        print(f"Best parameters:")
+        print(f"  a = {best_a:.4f}")
+        print(f"  b = {best_b:.4f}")
+        print(f"  constraint (3a + b) = {best_constraint:.4f}")
+        print(f"  weights = {best_trial.user_attrs.get('weights')}")
+        print(f"\nCompleted trials: {len(study.trials)}")
+        print(f"Pruned trials: {len([t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED])}")
+    else:
+        print("No trials completed.")
+    
+    print(f"\nResults saved to {CSV_FILE}")
+    print(f"Study database: {DB_PATH}")
+    print(f"{'='*60}")

@@ -271,6 +271,7 @@ class SongUNet(torch.nn.Module):
         super().__init__()
         self.label_dropout = label_dropout
         self.repeat = repeat
+        self.log_var_for_learnable_weights = torch.nn.Parameter(torch.zeros(repeat))
         emb_channels = model_channels * channel_mult_emb
         noise_channels = model_channels * channel_mult_noise
         init = dict(init_mode='xavier_uniform')
@@ -628,6 +629,7 @@ class EDMPrecond(torch.nn.Module):
         modified_state_dict = {}
         print(self.model.last_layer,"LASTLASYER")
         for key, value in state_dict.items():
+            
             if key.startswith(self.model.last_layer):
                 print("calling tilingg")
                 modified_state_dict[key] = self._tile_weight_for_repeat(key, value)
