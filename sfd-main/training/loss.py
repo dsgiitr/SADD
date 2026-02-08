@@ -55,7 +55,6 @@ class loss:
 
         self.lpips = None
         self.use_repeats=use_repeats
-        self.log_var=None
 
     def __call__(self, net, tensor_in, labels=None, step_idx=None, teacher_out=None, condition=None, unconditional_condition=None, weight_ls = None):
         step_idx = torch.tensor([step_idx]).reshape(1,)
@@ -87,18 +86,15 @@ class loss:
             num_future_steps=self.M + 1,  # New parameter for multi-step prediction
             use_repeats=self.use_repeats,
         )
-        self.log_var=net.model.log_var_for_learnable_weights if hasattr(net.model,'log_var_for_learnable_weights') else None
-        print("log_var", self.log_var)
+                    
         loss_xs={ #    x0            x1        x2             x3
             0:    [0.26207373, 0.30109838, 0.31655908,  0.70233226],
             1:    [1.1221931,   1.151793, 1.92400157, 4.4905653],
             2:    [4.44061422, 4.65574169,  4.91851616, 5.02707195]
         }
         step = step_idx.item()
-        loss_x_list=loss_xs[step]
-        denominator = sum(wi * xi for wi, xi in zip(weight_ls, loss_x_list))
-        print("weight_ls")
-        print(weight_ls)
+        # loss_x_list=loss_xs[step]
+        # denominator = sum(wi * xi for wi, xi in zip(weight_ls, loss_x_list))
 
         if self.use_repeats:
             loss = 0
@@ -110,6 +106,14 @@ class loss:
                 multiplier = weight_ls[i]
                 l = l * multiplier
                 loss += l
+                
+        else:
+            loss = (student_out[-1] - teacher_out[-1]).abs()
+        # loss_clast = (student_out[-1] - teacher_out[-1]).abs()
+        
+        if self.is_second_stage and self.model_source == 'edm' and step_idx == self.num_steps - 2: # the last step
+            loss += self.get_lpips_measure(student_out, teacher_out).mean()
+        student_out.detach() # student_out is complete 12 channels
         return loss, student_out[-1].detach(), loss_list if self.use_repeats else None, student_out
 
     def get_teacher_traj(self, net, tensor_in, labels=None, condition=None, unconditional_condition=None):
