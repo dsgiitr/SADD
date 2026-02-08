@@ -213,8 +213,8 @@ def training_loop(
             for row in reader:
                 sample_captions.append(row['text'])
 
-    # if dist.get_rank() != 0:
-    #     torch.distributed.barrier()
+    if dist.get_rank() != 0:
+        torch.distributed.barrier()
 
     print(kwargs)
     if loss_kwargs["use_repeats"]:
@@ -285,9 +285,8 @@ def training_loop(
             dist.print0('Meet nan, disable fp16!')
 
         if loss_fn.use_step_condition and not loss_fn.is_second_stage:
-            print("Using step condition")
             loss_fn.num_steps = next(rig.randint(4, 7))
-            print("Number of steps for this iteration:", loss_fn.num_steps)
+            print("num steps",loss_fn.num_steps)
             loss_fn.M = 2 if loss_fn.num_steps == 3 else 3
             loss_fn.t_steps = get_schedule(loss_fn.num_steps, loss_fn.sigma_min, loss_fn.sigma_max, schedule_type=loss_fn.schedule_type, schedule_rho=loss_fn.schedule_rho, device=device, net=net_copy)
             loss_fn.num_steps_teacher = (loss_fn.M + 1) * (loss_fn.num_steps - 1) + 1
@@ -314,6 +313,7 @@ def training_loop(
             else:
                 teacher_traj = [loss_fn.get_teacher_traj(net=net_copy, tensor_in=latents[k], labels=labels[k]) for k in range(num_acc_rounds)]
                 # print("Shape of the teacher trajectory:", teacher_traj[0].shape) # shape is (total_steps, batch_size, channels, height, width)
+
         # Calculate discrete weight updates every 1000 images within kimg_per_tick
         images_in_tick = cur_nimg - tick_start_nimg
         max_images_in_tick = kimg_per_tick * 1000
@@ -340,10 +340,10 @@ def training_loop(
         else:
             progress_discrete = 0.0
 
-        current_weight_ls = []
-        for i in range(len(initial_weight_ls)):
-            interpolated_weight = initial_weight_ls[i] + progress_discrete * (target_weight_ls[i] - initial_weight_ls[i])
-            current_weight_ls.append(interpolated_weight)
+        current_weight_ls = initial_weight_ls
+        # for i in range(len(initial_weight_ls)):
+        #     # interpolated_weight = initial_weight_ls[i] + progress_discrete * (target_weight_ls[i] - initial_weight_ls[i])
+        #     current_weight_ls.append(i)
         # Print weight updates every 1000 images
         if cur_nimg % 1000 == 0:
             dist.print0(f"Weight update - Step: {steps_completed}/{total_steps_in_tick}, Progress: {progress_discrete:.3f}, Current weights: {[f'{w:.3f}' for w in current_weight_ls]}, Images: {cur_nimg}")
@@ -359,44 +359,42 @@ def training_loop(
 
             # Calculate loss
             # weight_ls = [0.1,0.1,0.1,1]
-            print("current step ", step_idx, " weight_ls: ", current_weight_ls)
             for round_idx in range(num_acc_rounds):
-                print(f"round {round_idx}")
-                # with misc.ddp_sync(ddp, (round_idx == num_acc_rounds - 1)):
-                if guidance_type in ['uncond', 'cfg']:
-                    with autocast("cuda"):
-                        # loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx], condition=c[round_idx], unconditional_condition=uc)
-                        loss, stu_out, loss_ls, stu_out_comp , loss_for_logging= loss_fn(
-                            net=net, 
-                            tensor_in=latents[round_idx], 
-                            labels=labels[round_idx], 
-                            step_idx=step_idx, 
-                            teacher_out=teacher_traj[round_idx][start:end], 
-                            condition=c[round_idx], 
-                            unconditional_condition=uc,
-                            weight_ls = weight_ls)
-                else:
-                    loss, stu_out, loss_ls, stu_out_comp, loss_for_logging = loss_fn(
-                        net=net,
-                        tensor_in=latents[round_idx],
-                        labels=labels[round_idx],
-                        step_idx=step_idx,
-                        teacher_out=teacher_traj[round_idx][start:end],
-                        weight_ls = weight_ls
-                
-                    ) # NOTE : Loss here is that weighted loss that big ass normalisation formula and the 
-                # print("Shape of stu_out_comp: ", stu_out_comp.shape)
-                student_traj.append(stu_out_comp[:4,:,:,:])
-                latents[round_idx] = stu_out
-                training_stats.report('Loss/loss', loss)
+                with misc.ddp_sync(ddp, (round_idx == num_acc_rounds - 1)):
+                    if guidance_type in ['uncond', 'cfg']:
+                        with autocast("cuda"):
+                            # loss, stu_out = loss_fn(net=ddp, tensor_in=latents[round_idx], labels=labels[round_idx], step_idx=step_idx, teacher_out=teacher_traj[round_idx][step_idx], condition=c[round_idx], unconditional_condition=uc)
+                            loss, stu_out, loss_ls, stu_out_comp = loss_fn(
+                                net=ddp, 
+                                tensor_in=latents[round_idx], 
+                                labels=labels[round_idx], 
+                                step_idx=step_idx, 
+                                teacher_out=teacher_traj[round_idx][start:end], 
+                                condition=c[round_idx], 
+                                unconditional_condition=uc,
+                                weight_ls = current_weight_ls)
+                    else:
+                        loss, stu_out, loss_ls, stu_out_comp = loss_fn(
+                            net=ddp,
+                            tensor_in=latents[round_idx],
+                            labels=labels[round_idx],
+                            step_idx=step_idx,
+                            teacher_out=teacher_traj[round_idx][start:end],
+                            weight_ls = current_weight_ls
+                    
+                        ) # NOTE : Loss here is that weighted loss that big ass normalisation formula and the 
+                    # print("Shape of stu_out_comp: ", stu_out_comp.shape)
+                    student_traj.append(stu_out_comp[:4,:,:,:])
+                    latents[round_idx] = stu_out
+                    training_stats.report('Loss/loss', loss)
 
-                # writer.add_scalar('Loss/loss', loss.item(), cur_nimg // 1000)
+                    # writer.add_scalar('Loss/loss', loss.item(), cur_nimg // 1000)
 
-                if not (loss_fn.afs and step_idx == 0):
-                    loss.sum().mul(1 / num_acc_rounds).backward()
+                    if not (loss_fn.afs and step_idx == 0):
+                        loss.sum().mul(1 / batch_gpu_total).backward()
             
             with torch.no_grad():  
-                loss_norm = torch.norm(loss_for_logging, p=2, dim=(1,2,3))
+                loss_norm = torch.norm(loss, p=2, dim=(1,2,3))
                 loss_mean, loss_std = loss_norm.mean().item(), loss_norm.std().item()
             dist.print0("Step: {} | Loss-mean: {:12.8f} | loss-std: {:12.8f}".format(step_idx, loss_mean, loss_std))
             writer.add_scalar('Loss/loss_total', loss_mean, cur_nimg // 1000)
@@ -492,7 +490,7 @@ def training_loop(
 
         cur_nimg += batch_size * num_acc_rounds
         done = (cur_nimg >= total_kimg * 1000)
-        # if to_save % 10 == 0:
+        # if to_save % 30 == 0:
         #     if dist.get_rank() == 0:  # Only save from main process
         #         data = dict(model=net)
         #         for key, value in data.items():
@@ -572,11 +570,10 @@ def training_loop(
             for key, value in data.items():
                 if isinstance(value, torch.nn.Module):
                     value = copy.deepcopy(value).eval().requires_grad_(False)
-                    # misc.check_ddp_consistency(value)
+                    misc.check_ddp_consistency(value)
                     data[key] = value.cpu()
                 del value
-            # if dist.get_rank() == 0:
-            if True:
+            if dist.get_rank() == 0:
                 # with open(os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl'), 'wb') as f:
                 with open(os.path.join(run_dir, f'network-snapshot-999999.pkl'), 'wb') as f:
                     pickle.dump(data, f)
